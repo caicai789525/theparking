@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
+	"log"
 	"modules/config"
 	"modules/internal/controllers"
 	"modules/internal/middleware"
@@ -103,6 +105,17 @@ func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependenc
 func main() {
 	cfg := config.LoadConfig()
 	logger.InitLogger(cfg.Env)
+
+	viper.SetConfigFile("root/theparking/config/config.yaml")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("Error reading config file: %v", err)
+	}
+
+	// 读取端口配置
+	port := viper.GetString("port")
+	if port == "" {
+		port = "8080" // 默认端口
+	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.DB.User,
