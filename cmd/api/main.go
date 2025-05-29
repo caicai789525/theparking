@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -16,7 +15,6 @@ import (
 	"modules/internal/services"
 	"modules/pkg/database"
 	"modules/pkg/logger"
-	"net/http"
 	"os"
 
 	"gorm.io/gorm"
@@ -106,24 +104,6 @@ func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependenc
 // @description 使用 JWT 格式的令牌进行授权。格式：Bearer <token>
 
 func main() {
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12, // 最低支持 TLS 1.2
-		MaxVersion: tls.VersionTLS13, // 最高支持 TLS 1.3
-	}
-
-	server := &http.Server{
-		Addr:      ":443",
-		TLSConfig: tlsConfig,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "Hello, TLS!")
-		}),
-	}
-
-	err := server.ListenAndServeTLS("cert.pem", "key.pem")
-	if err != nil {
-		fmt.Println("Server error:", err)
-	}
-
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		// 处理配置加载失败的情况
@@ -193,23 +173,6 @@ func main() {
 		OwnerService:   ctrls.OwnerController,
 		Cfg:            ctrls.Cfg,
 	})
-
-	transport := &http.Transport{
-		TLSClientConfig: tlsConfig,
-	}
-
-	client := &http.Client{
-		Transport: transport,
-	}
-
-	resp, err := client.Get("https://example.com")
-	if err != nil {
-		fmt.Println("Client error:", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	fmt.Println("Response status:", resp.Status)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
