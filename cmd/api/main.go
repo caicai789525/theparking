@@ -164,7 +164,8 @@ func main() {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
-
+	
+	logger.Log.Info("服务将启动在端口", zap.String("port", cfg.Port))
 	if err := router.Run(":" + cfg.Port); err != nil {
 		logger.Log.Fatal("服务启动失败", zap.Error(err))
 	}
