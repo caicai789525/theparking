@@ -63,3 +63,19 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (str
 
 	return token.SignedString([]byte(s.Cfg.JWT.Secret))
 }
+
+// AdminLogin 管理员登录
+func (s *AuthService) AdminLogin(ctx context.Context, username, password string) (string, error) {
+	// 假设管理员用户名是 "admin"，密码是 "admin123"
+	if username != "admin" || password != "admin123" {
+		return "", errors.New("用户名或密码错误")
+	}
+
+	// 生成 JWT
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userID": 0, // 假设管理员 userID 为 0
+		"exp":    time.Now().Add(s.Cfg.JWT.ExpiresIn).Unix(),
+	})
+
+	return token.SignedString([]byte(s.Cfg.JWT.Secret))
+}

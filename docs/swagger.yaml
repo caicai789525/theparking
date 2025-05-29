@@ -1,5 +1,15 @@
 basePath: /
 definitions:
+  controllers.AdminLoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
   controllers.BindVehicleRequest:
     properties:
       brand:
@@ -267,6 +277,36 @@ info:
   title: 停车系统 API
   version: "1.0"
 paths:
+  /admin/login:
+    post:
+      consumes:
+      - application/json
+      description: 管理员登录并返回 JWT token
+      parameters:
+      - description: 登录信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AdminLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功，返回token
+          schema:
+            $ref: '#/definitions/controllers.TokenResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 认证失败，用户名或密码错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      summary: 管理员登录
+      tags:
+      - admin
   /admin/spots/{id}/status:
     put:
       consumes:

@@ -66,6 +66,8 @@ func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
 		admin.POST("/spots", deps.ParkingService.CreateSpot)
 	}
 
+	router.POST("/admin/login", deps.AuthService.AdminLogin)
+
 	report := router.Group("/reports").Use(middleware.JWTAuthMiddleware("secretkey"))
 	{
 		report.GET("/daily", deps.ReportService.GetDailyReport)

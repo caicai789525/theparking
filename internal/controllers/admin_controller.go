@@ -25,6 +25,11 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
+type AdminLoginRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
 // UpdateSpotStatusRequest 修改车位状态请求结构
 type UpdateSpotStatusRequest struct {
 	Status models.ParkingStatus `json:"status" binding:"required,oneof=idle occupied faulty"` // 车位状态
@@ -102,4 +107,32 @@ func (c *AdminController) GetSystemStats(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, stats)
+}
+
+// AdminLogin 管理员登录
+// @Summary 管理员登录
+// @Description 管理员登录并返回 JWT token
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Example {"username": "admin", "password": "admin123"}
+// @Param input body AdminLoginRequest true "登录信息"
+// @Success 200 {object} TokenResponse "登录成功，返回token"
+// @Failure 400 {object} ErrorResponse "请求参数错误"
+// @Failure 401 {object} ErrorResponse "认证失败，用户名或密码错误"
+// @Router /admin/login [post]
+func (c *AuthController) AdminLogin(ctx *gin.Context) {
+	var req AdminLoginRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	token, err := c.service.AdminLogin(ctx, req.Username, req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, TokenResponse{Token: token})
 }
