@@ -104,7 +104,20 @@ func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependenc
 // @description 使用 JWT 格式的令牌进行授权。格式：Bearer <token>
 
 func main() {
-	cfg := config.LoadConfig()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		// 处理配置加载失败的情况
+		logger.Log.Fatal("加载配置失败", zap.Error(err))
+	}
+	defer logger.Log.Sync()
+
+	cfg, err = config.LoadConfig()
+	if err != nil {
+		logger.Log.Error("加载配置失败", zap.Error(err))
+		return
+	}
+
+	// 使用配置重新初始化日志记录器
 	logger.InitLogger(cfg.Env)
 
 	// 获取当前工作目录

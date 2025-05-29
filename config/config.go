@@ -2,9 +2,7 @@ package config
 
 import (
 	"fmt"
-	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
-	"modules/pkg/logger"
+	"github.com/spf13/viper"
 	"os"
 	"time"
 )
@@ -30,31 +28,25 @@ type JWTConfig struct {
 	MaxAge    int           `mapstructure:"max_age"`
 }
 
-func LoadConfig() *Config {
-	// 假设配置文件名为 config.yaml，路径为项目根目录下
-	configFile, err := os.ReadFile("config.yaml")
+func LoadConfig() (*Config, error) {
+	viper.AutomaticEnv()
+	// 获取项目根目录
+	dir, err := os.Getwd()
 	if err != nil {
-		// 使用 zap.Error 函数将 error 转换为 zap.Field 类型
-		logger.Log.Error("无法读取配置文件", zap.Error(err))
-		panic(fmt.Sprintf("无法读取配置文件: %v", err))
+		return nil, fmt.Errorf("获取当前工作目录失败: %w", err)
+	}
+
+	configPath := fmt.Sprintf("%s/config/config.yaml", dir)
+	viper.SetConfigFile(configPath)
+
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("读取配置文件失败: %w", err)
 	}
 
 	var cfg Config
-	err = yaml.Unmarshal(configFile, &cfg)
-	if err != nil {
-		// 使用 zap.Error 函数将 error 转换为 zap.Field 类型
-		logger.Log.Error("解析配置文件失败", zap.Error(err))
-		panic(fmt.Sprintf("解析配置文件失败: %v", err))
+	if err := viper.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("配置解析失败: %w", err)
 	}
 
-	logger.Log.Info("读取到的端口配置", zap.String("port", cfg.Port))
-
-	// 确保端口配置正确
-	if cfg.Port == "" {
-		// 可以设置默认端口
-		cfg.Port = "8080"
-		logger.Log.Info("端口配置为空，使用默认端口", zap.String("port", cfg.Port))
-	}
-
-	return &cfg
+	return &cfg, nil
 }
