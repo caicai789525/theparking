@@ -15,6 +15,7 @@ import (
 	"modules/internal/services"
 	"modules/pkg/database"
 	"modules/pkg/logger"
+	"os"
 
 	"gorm.io/gorm"
 )
@@ -106,9 +107,16 @@ func main() {
 	cfg := config.LoadConfig()
 	logger.InitLogger(cfg.Env)
 
-	viper.SetConfigFile("root/theparking/config/config.yaml")
+	// 获取当前工作目录
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("获取当前工作目录失败: %v", err)
+	}
+
+	// 设置配置文件的相对路径
+	viper.SetConfigFile(dir + "/config/config.yaml")
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Error reading config file: %v", err)
+		log.Fatalf("读取配置文件出错: %v", err)
 	}
 
 	// 读取端口配置
