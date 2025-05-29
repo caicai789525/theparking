@@ -4,9 +4,11 @@ package services
 import (
 	"context"
 	"errors"
+	"github.com/goccy/go-json"
 	"modules/config"
 	"modules/internal/models"
 	"modules/internal/repositories"
+	"modules/internal/utils"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -55,12 +57,25 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (str
 		return "", errors.New("密码错误")
 	}
 
-	// 生成JWT
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID": user.ID,
-		"exp":    time.Now().Add(s.Cfg.JWT.ExpiresIn).Unix(),
-	})
+	var roles []models.Role
+	if err := json.Unmarshal(user.Roles, &roles); err != nil {
+		return "", err
+	}
 
+	// 生成 JWT
+	claims := utils.Claims{
+		UserID:   user.ID,
+		Username: user.Username,
+		Roles:    roles,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.Cfg.JWT.ExpiresIn)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    "parking_system",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.Cfg.JWT.Secret))
 }
 
@@ -72,10 +87,18 @@ func (s *AuthService) AdminLogin(ctx context.Context, username, password string)
 	}
 
 	// 生成 JWT
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID": 0, // 假设管理员 userID 为 0
-		"exp":    time.Now().Add(s.Cfg.JWT.ExpiresIn).Unix(),
-	})
+	claims := utils.Claims{
+		UserID:   0,
+		Username: "admin",
+		Roles:    []models.Role{models.Admin}, // 假设 Admin 是 models.Role 类型
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.Cfg.JWT.ExpiresIn)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    "parking_system",
+		},
+	}
 
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.Cfg.JWT.Secret))
 }

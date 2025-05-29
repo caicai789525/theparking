@@ -2,7 +2,7 @@
 package utils
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 	"modules/internal/models"
 	"time"
 )
@@ -17,7 +17,32 @@ type Claims struct {
 	UserID   uint          `json:"user_id"`
 	Username string        `json:"username"`
 	Roles    []models.Role `json:"roles"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
+}
+
+// GetExpirationTime 返回 JWT 的过期时间
+func (c Claims) GetExpirationTime() (*jwt.NumericDate, error) {
+	return c.RegisteredClaims.ExpiresAt, nil
+}
+
+// GetIssuedAt 返回 JWT 的签发时间
+func (c Claims) GetIssuedAt() (*jwt.NumericDate, error) {
+	return c.RegisteredClaims.IssuedAt, nil
+}
+
+// GetNotBefore 返回 JWT 的生效时间
+func (c Claims) GetNotBefore() (*jwt.NumericDate, error) {
+	return c.RegisteredClaims.NotBefore, nil
+}
+
+// GetIssuer 返回 JWT 的签发者
+func (c Claims) GetIssuer() (string, error) {
+	return c.RegisteredClaims.Issuer, nil
+}
+
+// GetSubject 返回 JWT 的主题
+func (c Claims) GetSubject() (string, error) {
+	return c.RegisteredClaims.Subject, nil
 }
 
 func GenerateJWT(userID uint, username string) (string, error) {
@@ -26,9 +51,10 @@ func GenerateJWT(userID uint, username string) (string, error) {
 	claims := Claims{
 		UserID:   userID,
 		Username: username,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expireTime.Unix(),
-			IssuedAt:  now.Unix(),
+		Roles:    []models.Role{}, // 可根据实际情况填充
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expireTime),
+			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    "parking-app",
 			Subject:   "user token",
 		},
@@ -37,15 +63,21 @@ func GenerateJWT(userID uint, username string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-func ParseJWT(tokenString string) (*Claims, error) {
+func ParseJWT(tokenString string, secret string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return []byte(secret), nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
+
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
-	return nil, err
+
+	return nil, jwt.ErrTokenInvalidClaims
 }

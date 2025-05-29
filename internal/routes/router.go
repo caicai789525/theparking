@@ -38,7 +38,8 @@ func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
 
 	// 需要身份验证
 	authGroup := router.Group("")
-	authGroup.Use(middleware.JWTAuthMiddleware("secretkey"))
+	// 使用依赖注入的配置
+	authGroup.Use(middleware.JWTAuthMiddleware(deps.Cfg))
 	{
 		authGroup.POST("/vehicles", deps.VehicleService.BindVehicle)
 
@@ -68,7 +69,9 @@ func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
 
 	router.POST("/admin/login", deps.AuthService.AdminLogin)
 
-	report := router.Group("/reports").Use(middleware.JWTAuthMiddleware("secretkey"))
+	report := router.Group("/reports")
+	// 使用依赖注入的配置
+	report.Use(middleware.JWTAuthMiddleware(deps.Cfg))
 	{
 		report.GET("/daily", deps.ReportService.GetDailyReport)
 	}

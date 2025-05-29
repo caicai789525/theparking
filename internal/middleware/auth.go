@@ -3,26 +3,31 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
+	"modules/config"
 	utils "modules/internal/utils"
+	"net/http"
+	"strings"
 )
 
 // internal/middleware/auth.go
-func JWTAuthMiddleware(secret string) gin.HandlerFunc {
+func JWTAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		if tokenString == "" {
-			c.AbortWithStatusJSON(401, gin.H{"error": "未提供认证令牌"})
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "未提供认证令牌"})
 			return
 		}
 
-		claims, err := utils.ParseJWT(tokenString)
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		claims, err := utils.ParseJWT(tokenString, cfg.JWT.Secret)
 		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"error": "无效令牌"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "无效的认证令牌"})
 			return
 		}
 
 		c.Set("userID", claims.UserID)
-		c.Set("roles", claims.Roles) // 需要JWT包含roles字段
+		c.Set("username", claims.Username)
+		c.Set("roles", claims.Roles)
 		c.Next()
 	}
 }

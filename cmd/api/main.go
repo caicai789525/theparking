@@ -7,6 +7,7 @@ import (
 	"gorm.io/driver/mysql"
 	"modules/config"
 	"modules/internal/controllers"
+	"modules/internal/middleware"
 	"modules/internal/repositories"
 	"modules/internal/routes"
 	"modules/internal/services"
@@ -124,6 +125,8 @@ func main() {
 
 	// 挂载 CORS 中间件
 	router.Use(CORSMiddleware())
+
+	router.Use(middleware.JWTAuthMiddleware(cfg))
 
 	// 注册路由时传入 router
 	routes.SetupRouter(router, &routes.RouterDependencies{
