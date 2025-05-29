@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
+	"os"
 	"time"
 )
 
@@ -28,7 +30,13 @@ type JWTConfig struct {
 
 func LoadConfig() *Config {
 	viper.AutomaticEnv()
-	viper.SetConfigFile("./config/config.yaml")
+	// 获取项目根目录
+	dir, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Sprintf("获取当前工作目录失败: %v", err))
+	}
+	configPath := fmt.Sprintf("%s/config/config.yaml", dir)
+	viper.SetConfigFile(configPath)
 
 	if err := viper.ReadInConfig(); err != nil {
 		panic("读取配置文件失败: " + err.Error())
