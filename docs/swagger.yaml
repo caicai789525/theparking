@@ -1,0 +1,696 @@
+basePath: /
+definitions:
+  controllers.BindVehicleRequest:
+    properties:
+      brand:
+        type: string
+      license:
+        type: string
+      model:
+        type: string
+    required:
+    - license
+    type: object
+  controllers.CreateSpotRequest:
+    properties:
+      hourly_rate:
+        type: number
+      type:
+        $ref: '#/definitions/models.ParkingType'
+    required:
+    - type
+    type: object
+  controllers.DailyReportResponse:
+    properties:
+      date:
+        type: string
+      permanent_count:
+        type: integer
+      short_term_count:
+        type: integer
+      temporary_count:
+        type: integer
+      total_income:
+        type: number
+    type: object
+  controllers.EntryRequest:
+    properties:
+      license:
+        type: string
+    required:
+    - license
+    type: object
+  controllers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  controllers.LeaseRequest:
+    properties:
+      months:
+        description: 租赁月数
+        minimum: 1
+        type: integer
+      rate:
+        description: 每月租金
+        type: number
+      spot_id:
+        description: 车位ID
+        type: integer
+    required:
+    - months
+    - rate
+    - spot_id
+    type: object
+  controllers.LeaseResponse:
+    properties:
+      end_date:
+        description: 结束日期
+        type: string
+      id:
+        description: 订单ID
+        type: integer
+      spot_id:
+        description: 车位ID
+        type: integer
+      start_date:
+        description: 起始日期（格式：YYYY-MM-DD）
+        type: string
+      status:
+        description: 当前状态
+        type: string
+      total:
+        description: 总金额
+        type: number
+    type: object
+  controllers.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  controllers.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  controllers.ParkingSpotResponse:
+    properties:
+      hourly_rate:
+        type: number
+      id:
+        type: integer
+      status:
+        type: string
+      type:
+        type: string
+    type: object
+  controllers.PurchaseRequest:
+    properties:
+      price:
+        description: 购置价格
+        type: number
+      spot_id:
+        type: integer
+    required:
+    - price
+    - spot_id
+    type: object
+  controllers.RecordResponse:
+    properties:
+      cost:
+        type: number
+      entry_time:
+        type: string
+      exit_time:
+        type: string
+      id:
+        type: integer
+      license:
+        type: string
+      spot_id:
+        type: integer
+    type: object
+  controllers.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 20
+        minLength: 6
+        type: string
+      username:
+        maxLength: 50
+        minLength: 1
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  controllers.RentRequest:
+    properties:
+      days:
+        minimum: 1
+        type: integer
+      rate:
+        type: number
+      spot_id:
+        type: integer
+    required:
+    - days
+    - rate
+    - spot_id
+    type: object
+  controllers.SystemStatsResponse:
+    properties:
+      available_spots:
+        type: integer
+      total_spots:
+        type: integer
+      utilization_rates:
+        additionalProperties:
+          type: number
+        type: object
+    type: object
+  controllers.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  controllers.UpdateSpotStatusRequest:
+    properties:
+      notes:
+        description: 备注说明
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/models.ParkingStatus'
+        description: 车位状态
+        enum:
+        - idle
+        - occupied
+        - faulty
+    required:
+    - status
+    type: object
+  controllers.VehicleResponse:
+    properties:
+      brand:
+        type: string
+      id:
+        type: integer
+      is_default:
+        type: boolean
+      license:
+        type: string
+      model:
+        type: string
+    type: object
+  models.ParkingSpot:
+    properties:
+      createdAt:
+        type: string
+      expiresAt:
+        description: 添加过期时间字段
+        type: string
+      hourlyRate:
+        type: number
+      id:
+        type: integer
+      license:
+        type: string
+      monthlyRate:
+        type: number
+      notes:
+        type: string
+      ownerID:
+        type: integer
+      status:
+        $ref: '#/definitions/models.ParkingStatus'
+      type:
+        $ref: '#/definitions/models.ParkingType'
+      updatedAt:
+        type: string
+    type: object
+  models.ParkingStatus:
+    enum:
+    - idle
+    - occupied
+    - faulty
+    type: string
+    x-enum-varnames:
+    - Idle
+    - Occupied
+    - Faulty
+  models.ParkingType:
+    enum:
+    - permanent
+    - short_term
+    - temporary
+    type: string
+    x-enum-varnames:
+    - Permanent
+    - ShortTerm
+    - Temporary
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: 技术支持
+  description: 用于管理车位、用户、租赁的接口服务。
+  termsOfService: http://swagger.io/terms/
+  title: 停车系统 API
+  version: "1.0"
+paths:
+  /admin/spots/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: 管理员根据车位ID修改车位状态（空闲/占用/故障）
+      parameters:
+      - description: 车位ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateSpotStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.ParkingSpotResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新车位状态
+      tags:
+      - admin
+  /admin/stats:
+    get:
+      description: 返回当前系统的车位总数、可用车位数、各类型车位利用率等
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.SystemStatsResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取系统统计数据
+      tags:
+      - admin
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 登录并返回 JWT token
+      parameters:
+      - description: 登录信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功，返回token
+          schema:
+            $ref: '#/definitions/controllers.TokenResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 认证失败，用户名或密码错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      summary: 用户登录
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 注册一个新用户
+      parameters:
+      - description: 注册信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 注册成功消息
+          schema:
+            $ref: '#/definitions/controllers.MessageResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "409":
+          description: 用户名或邮箱已存在
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      summary: 用户注册
+      tags:
+      - auth
+  /lease:
+    post:
+      consumes:
+      - application/json
+      description: 用户根据车位ID和租赁时长创建订单
+      parameters:
+      - description: 租赁信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.LeaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.LeaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建租赁订单
+      tags:
+      - lease
+  /owner/purchase:
+    post:
+      consumes:
+      - application/json
+      description: 用户购置指定的永久车位，提交车位ID和价格信息。
+      parameters:
+      - description: 购置信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.PurchaseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 购置成功，返回车位信息
+          schema:
+            $ref: '#/definitions/controllers.ParkingSpotResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 购置永久车位
+      tags:
+      - owner
+  /parking/entry:
+    post:
+      consumes:
+      - application/json
+      description: 车辆入场时登记车牌号，开始计费
+      parameters:
+      - description: 入场信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.EntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 入场记录
+          schema:
+            $ref: '#/definitions/controllers.RecordResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 车辆入场登记
+      tags:
+      - parking
+  /parking/exit/{id}:
+    post:
+      consumes:
+      - application/json
+      description: 车辆出场时结算停车费用，返回停车记录和费用信息
+      parameters:
+      - description: 停车记录ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 出场结算记录
+          schema:
+            $ref: '#/definitions/controllers.RecordResponse'
+        "400":
+          description: 无效的ID参数
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 车辆出场结算
+      tags:
+      - parking
+  /parking/rent:
+    post:
+      consumes:
+      - application/json
+      description: 用户将自己的车位发布出租，需指定车位ID、出租价格及出租天数。
+      parameters:
+      - description: 出租车位请求体
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.RentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 发布成功返回租赁信息
+          schema:
+            $ref: '#/definitions/controllers.LeaseResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 出租车位
+      tags:
+      - parking
+  /parking/spots:
+    get:
+      description: 获取所有车位的详细列表，包括类型、状态和收费标准
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回车位列表
+          schema:
+            items:
+              $ref: '#/definitions/models.ParkingSpot'
+            type: array
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取车位列表
+      tags:
+      - parking
+    post:
+      consumes:
+      - application/json
+      description: 新增一个车位，指定车位类型和收费标准
+      parameters:
+      - description: 车位信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateSpotRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功的车位信息
+          schema:
+            $ref: '#/definitions/controllers.ParkingSpotResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建车位
+      tags:
+      - parking
+  /reports/daily:
+    get:
+      description: 根据指定天数获取每日停车收入和车位使用统计，默认返回最近7天的数据。
+      parameters:
+      - default: 7
+        description: 查询天数，默认为7天
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 日报表数据
+          schema:
+            $ref: '#/definitions/controllers.DailyReportResponse'
+        "400":
+          description: 无效的查询参数
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取日报表
+      tags:
+      - reports
+  /vehicles:
+    post:
+      consumes:
+      - application/json
+      description: 将车辆绑定到当前用户账户，支持填写车牌号、品牌及车型信息。业主绑定车辆（可绑定多个）
+      parameters:
+      - description: 绑定车辆请求体
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.BindVehicleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 绑定成功返回车辆信息
+          schema:
+            $ref: '#/definitions/controllers.VehicleResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 绑定车辆
+      tags:
+      - vehicle
+securityDefinitions:
+  BearerAuth:
+    description: 使用 JWT 格式的令牌进行授权。格式：Bearer <token>
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
