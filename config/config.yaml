@@ -1,5 +1,5 @@
 env: development
-port: "4428"
+port: "8080"
 
 db:
   host: localhost

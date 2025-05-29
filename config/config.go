@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Env  string         `mapstructure:"env"`
-	Port string         `mapstructure:"4428"`
+	Port string         `mapstructure:"8080"`
 	DB   DatabaseConfig `mapstructure:"db"`
 	JWT  JWTConfig      `mapstructure:"jwt"`
 }
