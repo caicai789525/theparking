@@ -82,9 +82,13 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 	return nil
 }
 
+// GenerateToken 生成 JWT 令牌
 func (s *AuthService) GenerateToken(userID uint, username string, roles []string) (string, error) {
-	// 直接使用 s.Cfg.JWT.ExpiresIn，因为它已经是 time.Duration 类型
-	return GenerateJWT(s.Cfg.JWT.Secret, userID, username, roles, s.Cfg.JWT.ExpiresIn)
+	expiresIn, err := time.ParseDuration(s.Cfg.JWT.ExpiresIn)
+	if err != nil {
+		return "", fmt.Errorf("解析令牌过期时间失败: %w", err)
+	}
+	return GenerateJWT(s.Cfg.JWT.Secret, userID, username, roles, expiresIn)
 }
 
 // GenerateJWT 生成 JWT 令牌
@@ -166,7 +170,14 @@ func (s *AuthService) Login(ctx context.Context, username, password string, chec
 		roleStrings[i] = string(role)
 	}
 
-	return utils.GenerateJWT(s.Cfg.JWT.Secret, user.ID, user.Username, roleStrings, s.Cfg.JWT.ExpiresIn)
+	// 将 s.Cfg.JWT.ExpiresIn 转换为 time.Duration 类型
+	expiresIn, err := time.ParseDuration(s.Cfg.JWT.ExpiresIn)
+	if err != nil {
+		log.Printf("解析令牌过期时间失败，使用默认值 24h: %v", err)
+		expiresIn = 24 * time.Hour
+	}
+
+	return utils.GenerateJWT(s.Cfg.JWT.Secret, user.ID, user.Username, roleStrings, expiresIn)
 }
 
 // AdminLogin 管理员登录方法，复用 Login 方法

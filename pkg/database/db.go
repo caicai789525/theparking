@@ -3,7 +3,7 @@ package database
 
 import (
 	"fmt"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
 	"modules/config"
@@ -12,17 +12,14 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDB(cfg config.DatabaseConfig) *gorm.DB {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
-		cfg.Host, cfg.User, cfg.Password, cfg.Name, cfg.Port)
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+func ConnectDB(cfg *config.Config) (*gorm.DB, error) {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		return nil, err
 	}
-
-	DB = db
-	return db
+	return db, nil
 }
 
 func Migrate(db *gorm.DB) {

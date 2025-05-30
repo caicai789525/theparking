@@ -20,9 +20,9 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig()
+	configPath := filepath.Join(".", "config", "config.yaml")
+	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
-		// 处理配置加载失败的情况
 		log.Fatalf("加载配置失败: %v", err)
 	}
 
@@ -38,9 +38,6 @@ func main() {
 	if err := os.MkdirAll(logDir, os.ModePerm); err != nil {
 		log.Fatalf("创建日志目录失败: %v", err)
 	}
-	logPath := filepath.Join(logDir, "parking.log")
-	// 将日志文件路径设置到配置中
-	cfg.LogFilePath = logPath
 
 	// 使用配置初始化日志记录器
 	logger.InitLogger(cfg)
