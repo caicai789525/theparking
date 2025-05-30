@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"modules/internal/services"
 	"net/http"
 
@@ -81,8 +82,21 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
-
+	// 打印接收到的用户名和密码，用于调试
+	log.Printf("Received username: %s, password: %s", req.Username, req.Password)
 	token, err := c.service.Login(ctx, req.Username, req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
+		return
+	}
+	// 此处重复解析请求体无意义，可移除
+	// if err := ctx.ShouldBindJSON(&req); err != nil {
+	// 	ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+	// 	return
+	// }
+
+	// 修正：使用 = 赋值已存在的变量
+	token, err = c.service.Login(ctx, req.Username, req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
 		return
