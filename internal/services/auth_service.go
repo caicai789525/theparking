@@ -82,16 +82,22 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 	return nil
 }
 
+func (s *AuthService) GenerateToken(userID uint, username string, roles []string) (string, error) {
+	// 直接使用 s.Cfg.JWT.ExpiresIn，因为它已经是 time.Duration 类型
+	return GenerateJWT(s.Cfg.JWT.Secret, userID, username, roles, s.Cfg.JWT.ExpiresIn)
+}
+
 // GenerateJWT 生成 JWT 令牌
 func GenerateJWT(secret string, userID uint, username string, roles []string, expiresIn time.Duration) (string, error) {
+	now := time.Now().UTC()
 	claims := &Claims{
 		UserID:   userID,
 		Username: username,
 		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
-			NotBefore: jwt.NewNumericDate(time.Now()),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(now.Add(expiresIn)),
+			NotBefore: jwt.NewNumericDate(now),
+			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 
@@ -116,7 +122,6 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 		return claims, nil
 	}
 
-	log.Printf("令牌无效")
 	return nil, jwt.ErrTokenInvalidClaims
 }
 
