@@ -26,6 +26,7 @@ type RouterDependencies struct {
 
 // logMiddleware 公共日志中间件，记录路由访问信息
 func logMiddleware(routePath string) gin.HandlerFunc {
+	fmt.Printf("Initializing logMiddleware for %s\n", routePath)
 	return func(c *gin.Context) {
 		fmt.Printf("Accessing %s route\n", routePath)
 		c.Next()
@@ -53,6 +54,8 @@ func setupPublicRoutes(router *gin.Engine, deps *RouterDependencies) {
 		public.POST("/auth/register", deps.AuthController.Register)
 		// 用户登录接口
 		public.POST("/auth/login", deps.AuthController.UserLogin)
+		// 管理员登录接口
+		public.POST("/admin/login", deps.AdminService.AdminLogin)
 		// 其他无需认证的接口...
 	}
 }

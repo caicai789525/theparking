@@ -39,7 +39,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.LoginRequest"
+                            "$ref": "#/definitions/controllers.AdminLoginRequest"
                         }
                     }
                 ],
@@ -47,7 +47,7 @@ const docTemplate = `{
                     "200": {
                         "description": "登录成功，返回token",
                         "schema": {
-                            "$ref": "#/definitions/controllers.TokenResponse"
+                            "$ref": "#/definitions/controllers.AdminLoginResponse"
                         }
                     },
                     "400": {
@@ -63,7 +63,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "非管理员用户",
+                        "description": "非管理员用户，无权访问",
                         "schema": {
                             "$ref": "#/definitions/controllers.ErrorResponse"
                         }
@@ -285,7 +285,7 @@ const docTemplate = `{
                     "200": {
                         "description": "登录成功，返回token",
                         "schema": {
-                            "$ref": "#/definitions/controllers.TokenResponse"
+                            "$ref": "#/definitions/controllers.LoginResponse"
                         }
                     },
                     "400": {
@@ -775,6 +775,30 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "controllers.AdminLoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.AdminLoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "JWT Token",
+                    "type": "string"
+                }
+            }
+        },
         "controllers.BindVehicleRequest": {
             "type": "object",
             "required": [
@@ -915,6 +939,15 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "JWT Token",
+                    "type": "string"
+                }
+            }
+        },
         "controllers.MessageResponse": {
             "type": "object",
             "properties": {
@@ -1044,14 +1077,6 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.TokenResponse": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string"
-                }
-            }
-        },
         "controllers.UpdateSpotStatusRequest": {
             "type": "object",
             "required": [
@@ -1105,7 +1130,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "expiresAt": {
-                    "description": "过期时间",
+                    "description": "过期时间，修改为 VARCHAR 类型",
                     "type": "string"
                 },
                 "hourlyRate": {
@@ -1171,14 +1196,6 @@ const docTemplate = `{
                 "ShortTerm",
                 "Temporary"
             ]
-        }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "description": "使用 JWT 格式的令牌进行授权。格式：Bearer \u003ctoken\u003e",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }`

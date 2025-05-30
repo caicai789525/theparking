@@ -14,6 +14,8 @@ type AdminController struct {
 	parkingService *services.ParkingService
 	reportService  *services.ReportService
 	authService    *services.AuthService
+	// JWT Token
+	Token string `json:"token"`
 }
 
 func NewAdminController(ps *services.ParkingService, rs *services.ReportService) *AdminController {

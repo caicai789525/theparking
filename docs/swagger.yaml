@@ -1,5 +1,21 @@
 basePath: /
 definitions:
+  controllers.AdminLoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  controllers.AdminLoginResponse:
+    properties:
+      token:
+        description: JWT Token
+        type: string
+    type: object
   controllers.BindVehicleRequest:
     properties:
       brand:
@@ -96,6 +112,12 @@ definitions:
     - password
     - username
     type: object
+  controllers.LoginResponse:
+    properties:
+      token:
+        description: JWT Token
+        type: string
+    type: object
   controllers.MessageResponse:
     properties:
       message:
@@ -185,11 +207,6 @@ definitions:
           type: number
         type: object
     type: object
-  controllers.TokenResponse:
-    properties:
-      token:
-        type: string
-    type: object
   controllers.UpdateSpotStatusRequest:
     properties:
       notes:
@@ -225,7 +242,7 @@ definitions:
         description: 创建时间
         type: string
       expiresAt:
-        description: 过期时间
+        description: 过期时间，修改为 VARCHAR 类型
         type: string
       hourlyRate:
         description: 每小时费率
@@ -296,14 +313,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/controllers.LoginRequest'
+          $ref: '#/definitions/controllers.AdminLoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: 登录成功，返回token
           schema:
-            $ref: '#/definitions/controllers.TokenResponse'
+            $ref: '#/definitions/controllers.AdminLoginResponse'
         "400":
           description: 请求参数错误
           schema:
@@ -313,7 +330,7 @@ paths:
           schema:
             $ref: '#/definitions/controllers.ErrorResponse'
         "403":
-          description: 非管理员用户
+          description: 非管理员用户，无权访问
           schema:
             $ref: '#/definitions/controllers.ErrorResponse'
       summary: 管理员登录
@@ -455,7 +472,7 @@ paths:
         "200":
           description: 登录成功，返回token
           schema:
-            $ref: '#/definitions/controllers.TokenResponse'
+            $ref: '#/definitions/controllers.LoginResponse'
         "400":
           description: 请求参数错误
           schema:
@@ -764,10 +781,4 @@ paths:
       summary: 绑定车辆
       tags:
       - vehicle
-securityDefinitions:
-  BearerAuth:
-    description: 使用 JWT 格式的令牌进行授权。格式：Bearer <token>
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

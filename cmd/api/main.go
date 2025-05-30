@@ -174,6 +174,12 @@ func main() {
 		Cfg:            ctrls.Cfg,
 	}
 
+	if deps.ParkingService == nil {
+		fmt.Println("ParkingService in RouterDependencies is nil")
+	} else {
+		fmt.Println("ParkingService in RouterDependencies is not nil")
+	}
+
 	// 打印依赖注入信息，确认 ParkingService 正确注入
 	fmt.Printf("ParkingService: %+v\n", deps.ParkingService)
 	routes.SetupRouter(router, deps)
