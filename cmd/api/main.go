@@ -158,7 +158,7 @@ func main() {
 	//router.Use(middleware.JWTAuthMiddleware(cfg))
 
 	// 注册路由时传入 router
-	routes.SetupRouter(router, &routes.RouterDependencies{
+	deps := &routes.RouterDependencies{
 		AuthController: ctrls.AuthController,
 		ParkingService: ctrls.ParkingController,
 		AdminService:   ctrls.AdminController,
@@ -167,7 +167,11 @@ func main() {
 		VehicleService: ctrls.VehicleController,
 		OwnerService:   ctrls.OwnerController,
 		Cfg:            ctrls.Cfg,
-	})
+	}
+
+	// 打印依赖注入信息，确认 ParkingService 正确注入
+	fmt.Printf("ParkingService: %+v\n", deps.ParkingService)
+	routes.SetupRouter(router, deps)
 
 	// 打印所有注册的路由，用于调试
 	for _, route := range router.Routes() {
@@ -175,6 +179,9 @@ func main() {
 			zap.String("Method", route.Method),
 			zap.String("Path", route.Path),
 			zap.String("Handler", route.Handler))
+	}
+	for _, route := range router.Routes() {
+		fmt.Printf("Method: %s, Path: %s, Handler: %s\n", route.Method, route.Path, route.Handler)
 	}
 
 	router.GET("/health", func(c *gin.Context) {

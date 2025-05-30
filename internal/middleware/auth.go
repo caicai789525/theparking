@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
@@ -12,9 +13,10 @@ import (
 
 func JWTAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		fmt.Println("Entering JWTAuthMiddleware, Path:", ctx.Request.URL.Path)
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			logger.Log.Error("未提供认证头", zap.String("path", ctx.Request.URL.Path))
+			fmt.Println("No Authorization header provided")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "未提供认证头"})
 			return
 		}
