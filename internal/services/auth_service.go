@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goccy/go-json"
-	"log"
 	"modules/config"
 	"modules/internal/models"
 	"modules/internal/repositories"
@@ -50,23 +49,26 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 
 // 用户登录
 func (s *AuthService) Login(ctx context.Context, username, password string) (string, error) {
-	log.Printf("用户尝试登录，用户名: %s", username)
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
-		log.Printf("用户 %s 不存在: %v", username, err)
 		return "", fmt.Errorf("查询用户失败: %w", err)
 	}
 
 	if err := user.CheckPassword(password); err != nil {
-		log.Printf("用户 %s 密码验证失败", username)
 		return "", fmt.Errorf("密码验证失败: %w", err)
 	}
 
 	var roles []models.Role
-	if err := json.Unmarshal(user.Roles, &roles); err != nil {
-		log.Printf("用户 %s 反序列化角色失败: %v", username, err)
-		return "", fmt.Errorf("反序列化用户角色失败: %w", err)
+	// 检查 user.Roles 是否为空或 nil
+	if len(user.Roles) == 0 {
+		// 处理角色为空的情况，你可以选择返回空切片或报错
+		roles = []models.Role{}
+	} else {
+		if err := json.Unmarshal(user.Roles, &roles); err != nil {
+			return "", fmt.Errorf("反序列化用户角色失败: %w", err)
+		}
 	}
+
 	now := time.Now()
 	// 生成 JWT
 	claims := utils.Claims{
@@ -82,7 +84,6 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (str
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	log.Printf("用户 %s 登录成功", username)
 	return token.SignedString([]byte(s.Cfg.JWT.Secret))
 }
 
