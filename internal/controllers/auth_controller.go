@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"errors"
+	"log"
 	"modules/internal/services"
 	"net/http"
 
@@ -120,12 +122,12 @@ func (c *AuthController) UserLogin(ctx *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Example {"username": "admin", "password": "admin123"}
+// @Example {"username": "cccccc", "password": "your_password"}
 // @Param input body LoginRequest true "登录信息"
 // @Success 200 {object} TokenResponse "登录成功，返回token"
 // @Failure 400 {object} ErrorResponse "请求参数错误"
 // @Failure 401 {object} ErrorResponse "认证失败，用户名或密码错误"
-// @Failure 403 {object} ErrorResponse "非管理员用户"
+// @Failure 403 {object} ErrorResponse "非管理员用户，无权访问"
 // @Router /admin/login [post]
 func (c *AuthController) AdminLogin(ctx *gin.Context) {
 	var req LoginRequest
@@ -133,12 +135,17 @@ func (c *AuthController) AdminLogin(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
-
+	// 打印接收到的用户名和密码，用于调试
+	log.Printf("Received admin username: %s, password: %s", req.Username, req.Password)
 	token, err := c.service.Login(ctx, req.Username, req.Password, true)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
+		log.Printf("Admin login error: %v", err)
+		if errors.Is(err, errors.New("非管理员用户，无权访问")) {
+			ctx.JSON(http.StatusForbidden, ErrorResponse{Error: err.Error()})
+		} else {
+			ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
+		}
 		return
 	}
-
 	ctx.JSON(http.StatusOK, TokenResponse{Token: token})
 }

@@ -1,15 +1,5 @@
 basePath: /
 definitions:
-  controllers.AdminLoginRequest:
-    properties:
-      password:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
   controllers.BindVehicleRequest:
     properties:
       brand:
@@ -306,7 +296,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/controllers.AdminLoginRequest'
+          $ref: '#/definitions/controllers.LoginRequest'
       produces:
       - application/json
       responses:
@@ -320,6 +310,10 @@ paths:
             $ref: '#/definitions/controllers.ErrorResponse'
         "401":
           description: 认证失败，用户名或密码错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "403":
+          description: 非管理员用户
           schema:
             $ref: '#/definitions/controllers.ErrorResponse'
       summary: 管理员登录
@@ -381,36 +375,6 @@ paths:
       summary: 获取系统统计数据
       tags:
       - admin
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: 登录并返回 JWT token
-      parameters:
-      - description: 登录信息
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 登录成功，返回token
-          schema:
-            $ref: '#/definitions/controllers.TokenResponse'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
-        "401":
-          description: 认证失败，用户名或密码错误
-          schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
-      summary: 用户登录
-      tags:
-      - auth
   /auth/register:
     post:
       consumes:
@@ -473,6 +437,36 @@ paths:
       summary: 创建租赁订单
       tags:
       - lease
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: 用户登录并返回 JWT token
+      parameters:
+      - description: 登录信息
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功，返回token
+          schema:
+            $ref: '#/definitions/controllers.TokenResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "401":
+          description: 认证失败，用户名或密码错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      summary: 用户登录
+      tags:
+      - auth
   /owner/purchase:
     post:
       consumes:

@@ -72,7 +72,7 @@ func (s *AuthService) Login(ctx context.Context, username, password string, chec
 			}
 		}
 		if !isAdmin {
-			return "", errors.New("非管理员用户")
+			return "", errors.New("非管理员用户，无权访问")
 		}
 	}
 
