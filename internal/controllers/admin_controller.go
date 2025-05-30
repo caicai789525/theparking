@@ -66,7 +66,11 @@ type SystemStatsResponse struct {
 // @Failure 500 {object} ErrorResponse "服务器内部错误"
 // @Router /admin/spots/{id}/status [put]
 func (c *AdminController) UpdateSpotStatus(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "无效的车位 ID"})
+		return
+	}
 
 	var req UpdateSpotStatusRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {

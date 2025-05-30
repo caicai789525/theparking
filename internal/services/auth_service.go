@@ -89,20 +89,45 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (str
 
 // AdminLogin 管理员登录
 func (s *AuthService) AdminLogin(ctx context.Context, username, password string) (string, error) {
-	// 假设管理员用户名是 "admin"，密码是 "admin123"
-	if username != "admin" || password != "admin123" {
-		return "", errors.New("用户名或密码错误")
+	// 从数据库获取用户信息
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
+	if err != nil {
+		return "", fmt.Errorf("查询用户失败: %w", err)
+	}
+
+	// 检查用户是否为管理员
+	var roles []models.Role
+	if err := json.Unmarshal(user.Roles, &roles); err != nil {
+		return "", fmt.Errorf("反序列化用户角色失败: %w", err)
+	}
+
+	isAdmin := false
+	for _, role := range roles {
+		if role == models.Admin {
+			isAdmin = true
+			break
+		}
+	}
+
+	if !isAdmin {
+		return "", errors.New("该用户不是管理员")
+	}
+
+	// 验证密码
+	if err := user.CheckPassword(password); err != nil {
+		return "", fmt.Errorf("密码验证失败: %w", err)
 	}
 
 	// 生成 JWT
+	now := time.Now()
 	claims := utils.Claims{
-		UserID:   0,
-		Username: "admin",
-		Roles:    []models.Role{models.Admin}, // 假设 Admin 是 models.Role 类型
+		UserID:   user.ID,
+		Username: user.Username,
+		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.Cfg.JWT.ExpiresIn)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			NotBefore: jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(now.Add(s.Cfg.JWT.ExpiresIn)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
 			Issuer:    "parking_system",
 		},
 	}
