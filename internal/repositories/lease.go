@@ -33,8 +33,8 @@ func (r *leaseRepo) CreateLease(ctx context.Context, lease *models.LeaseOrder) e
 			return err
 		}
 
-		if spot.Type != models.ShortTerm {
-			return errors.New("非短租车位")
+		if spot.Type != string(models.ShortTerm) {
+			return errors.New("车位类型不是短租类型")
 		}
 
 		// 更新车位到期时间

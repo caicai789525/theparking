@@ -5,15 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/goccy/go-json"
 	"gorm.io/gorm"
+	"log"
 	"modules/config"
 	"modules/internal/models"
 	"modules/internal/repositories"
 	"modules/internal/utils"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
+	"regexp"
 )
 
 type AuthService struct {
@@ -28,24 +26,50 @@ func NewAuthService(userRepo repositories.UserRepository, cfg *config.Config) *A
 	}
 }
 
+// 邮箱正则表达式
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
 // 用户注册
 func (s *AuthService) Register(ctx context.Context, username, password, email string) error {
+	// 输入验证
+	if username == "" {
+		return errors.New("用户名不能为空")
+	}
+	if password == "" {
+		return errors.New("密码不能为空")
+	}
+	if !emailRegex.MatchString(email) {
+		return errors.New("邮箱格式不正确")
+	}
+
 	// 检查用户名是否已存在
-	if _, err := s.userRepo.GetUserByUsername(ctx, username); err == nil {
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("查询用户名失败: %v", err)
+			return fmt.Errorf("查询用户名失败: %w", err)
+		}
+	} else if user != nil {
 		return errors.New("用户名已存在")
 	}
 
-	user := &models.User{
+	user = &models.User{
 		Username: username,
 		Password: password,
 		Email:    email,
 	}
 
 	if err := user.HashPassword(); err != nil {
+		log.Printf("密码哈希处理失败: %v", err)
 		return err
 	}
 
-	return s.userRepo.CreateUser(ctx, user)
+	if err := s.userRepo.CreateUser(ctx, user); err != nil {
+		log.Printf("创建用户记录失败: %v", err)
+		return fmt.Errorf("创建用户记录失败: %w", err)
+	}
+
+	return nil
 }
 
 // Login 用户/管理员通用登录方法
@@ -63,8 +87,12 @@ func (s *AuthService) Login(ctx context.Context, username, password string, chec
 	}
 
 	var roles []models.Role
-	if err := json.Unmarshal(user.Roles, &roles); err != nil {
-		return "", fmt.Errorf("反序列化用户角色失败: %w", err)
+	if len(user.Roles) == 0 {
+		roles = []models.Role{}
+	} else {
+		if err := user.Roles.Unmarshal(&roles); err != nil {
+			return "", fmt.Errorf("反序列化用户角色失败: %w", err)
+		}
 	}
 
 	if checkAdmin {
@@ -80,21 +108,12 @@ func (s *AuthService) Login(ctx context.Context, username, password string, chec
 		}
 	}
 
-	now := time.Now()
-	claims := utils.Claims{
-		UserID:   user.ID,
-		Username: user.Username,
-		Roles:    roles,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(now.Add(s.Cfg.JWT.ExpiresIn)),
-			IssuedAt:  jwt.NewNumericDate(now),
-			NotBefore: jwt.NewNumericDate(now),
-			Issuer:    "parking_system",
-		},
+	roleStrings := make([]string, len(roles))
+	for i, role := range roles {
+		roleStrings[i] = string(role)
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.Cfg.JWT.Secret))
+	return utils.GenerateJWT(s.Cfg.JWT.Secret, user.ID, user.Username, roleStrings, s.Cfg.JWT.ExpiresIn)
 }
 
 // AdminLogin 管理员登录方法，复用 Login 方法

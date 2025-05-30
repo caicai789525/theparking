@@ -25,8 +25,8 @@ const (
 type ParkingSpot struct {
 	// 创建时间
 	CreatedAt string `json:"createdAt"`
-	// 过期时间
-	ExpiresAt string `json:"expiresAt" description:"添加过期时间字段"`
+	// 过期时间，修改为 VARCHAR 类型
+	ExpiresAt string `json:"expiresAt" description:"添加过期时间字段" gorm:"type:varchar(255)"`
 	// 每小时费率
 	HourlyRate float64 `json:"hourlyRate"`
 	// 车位ID

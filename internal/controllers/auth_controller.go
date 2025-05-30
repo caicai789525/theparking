@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"modules/internal/services"
 	"net/http"
 
@@ -94,22 +95,24 @@ func (c *AuthController) Register(ctx *gin.Context) {
 // @Produce json
 // @Example {"username": "user1", "password": "pass123"}
 // @Param input body LoginRequest true "登录信息"
-// @Success 200 {object} TokenResponse "登录成功，返回token"
+// @Success 200 {object} LoginResponse "登录成功，返回token"
 // @Failure 400 {object} ErrorResponse "请求参数错误"
 // @Failure 401 {object} ErrorResponse "认证失败，用户名或密码错误"
 // @Router /login [post]
 func (c *AuthController) UserLogin(ctx *gin.Context) {
 	var req LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		log.Printf("请求参数绑定失败: %v", err)
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "请求参数错误"})
 		return
 	}
 
 	token, err := c.service.Login(ctx, req.Username, req.Password, false)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
+		log.Printf("用户登录失败: %v", err)
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "认证失败，用户名或密码错误"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, TokenResponse{Token: token})
+	ctx.JSON(http.StatusOK, LoginResponse{Token: token})
 }

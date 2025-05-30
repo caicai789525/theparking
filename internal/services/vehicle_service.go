@@ -36,7 +36,13 @@ func (s *VehicleService) PublishSpotForRent(ctx context.Context, userID, spotID 
 		return nil, fmt.Errorf("获取车位信息失败: %w", err)
 	}
 
-	if spot.OwnerID == nil || *spot.OwnerID != userID {
+	// 判断 OwnerID 是否为 0
+	if spot.OwnerID == 0 {
+		return nil, errors.New("车位无业主，无法出租")
+	}
+
+	// 判断操作的用户是否为车位业主
+	if spot.OwnerID != userID {
 		return nil, errors.New("无权操作该车位")
 	}
 

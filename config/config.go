@@ -8,13 +8,17 @@ import (
 )
 
 type Config struct {
-	Env  string         `mapstructure:"env"`
-	Port string         `mapstructure:"port"`
-	DB   DatabaseConfig `mapstructure:"db"`
-	JWT  struct {
-		SecretKey string `yaml:"secret_key"` // 确保有 SecretKey 字段
-	} `yaml:"jwt"`
+	Env         string         `mapstructure:"env"`
+	Port        string         `mapstructure:"port"`
+	DB          DatabaseConfig `mapstructure:"db"`
+	JWT         JWTConfig      `yaml:"jwt"`
 	LogFilePath string
+}
+
+type JWTConfig struct {
+	Secret    string        `yaml:"secret"`
+	ExpiresIn time.Duration `yaml:"expires_in"`
+	MaxAge    int           `yaml:"max_age"`
 }
 
 type DatabaseConfig struct {
@@ -23,12 +27,6 @@ type DatabaseConfig struct {
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
 	Name     string `mapstructure:"name"`
-}
-
-type JWTConfig struct {
-	Secret    string        `mapstructure:"secret"`
-	ExpiresIn time.Duration `mapstructure:"expires_in"`
-	MaxAge    int           `mapstructure:"max_age"`
 }
 
 func LoadConfig() (*Config, error) {

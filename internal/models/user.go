@@ -2,8 +2,9 @@
 package models
 
 import (
+	"github.com/goccy/go-json"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/datatypes"
+	"modules/internal/utils"
 	"time"
 )
 
@@ -15,16 +16,22 @@ const (
 	Renter Role = "renter"
 )
 
+type JSONBytes []byte
+
+func (r JSONBytes) Unmarshal(dst *[]Role) error {
+	return json.Unmarshal(r, dst)
+}
+
 type User struct {
-	ID        uint           `gorm:"primaryKey"`
-	Username  string         `gorm:"uniqueIndex;size:50;not null"`
-	Password  string         `gorm:"size:100;not null"`
-	Email     string         `gorm:"uniqueIndex;size:100;not null"`
-	Phone     string         `gorm:"size:20"`
-	Roles     datatypes.JSON `gorm:"type:json"` //
-	CreatedAt time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime"`
-	Vehicles  []Vehicle      `gorm:"foreignKey:UserID"`
+	ID        uint      `gorm:"primaryKey"`
+	Username  string    `gorm:"uniqueIndex;size:50;not null"`
+	Password  string    `gorm:"size:100;not null"`
+	Email     string    `gorm:"uniqueIndex;size:100;not null"`
+	Phone     string    `gorm:"size:20"`
+	Roles     JSONBytes `gorm:"type:json"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	IsActive  bool      `gorm:"default:true"` // 新增用户活跃状态字段
 }
 
 type AdminLoginRequest struct {
@@ -32,17 +39,17 @@ type AdminLoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// 密码加密
+// HashPassword 对密码进行哈希处理
 func (u *User) HashPassword() error {
-	hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	hashedPassword, err := utils.HashPassword(u.Password)
 	if err != nil {
 		return err
 	}
-	u.Password = string(hashed)
+	u.Password = string(hashedPassword)
 	return nil
 }
 
-// 密码验证
+// CheckPassword 检查密码是否正确
 func (u *User) CheckPassword(password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 }

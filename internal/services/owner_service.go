@@ -60,7 +60,7 @@ func (s *OwnerService) PurchasePermanentSpot(
 		Type: string(models.Permanent),
 		// 将 models.Idle 转换为 string 类型
 		Status: string(models.Idle),
-		// 直接使用 userID
+		// 直接使用 userID，因为 OwnerID 是 uint 类型
 		OwnerID: userID,
 	}); err != nil {
 		return nil, fmt.Errorf("更新车位失败: %w", err)
@@ -68,7 +68,7 @@ func (s *OwnerService) PurchasePermanentSpot(
 
 	// 4. 创建购置记录（需实现 PurchaseRecord 模型）
 	record := &models.PurchaseRecord{
-		UserID:        userID,
+		UserID:        userID, // 使用 uint 类型的 userID
 		SpotID:        spotID,
 		PurchasePrice: price,
 		PurchaseDate:  time.Now(),

@@ -25,23 +25,11 @@ type RouterDependencies struct {
 	Cfg            *config.Config
 }
 
-// SetupRouter 初始化整个路由系统
+// SetupRouter 配置路由
 func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
-	// 使用传进来的 router，而不是重新创建 r := gin.Default()
-
-	// 配置 Swagger 文档路由
 	setupSwaggerRoutes(router)
-
-	// 配置公共路由，无需认证即可访问
 	setupPublicRoutes(router, deps)
-
-	// 配置需要身份验证的路由
 	setupAuthRoutes(router, deps)
-
-	// 配置管理员专属路由
-	setupAdminRoutes(router, deps)
-
-	// 配置报表相关路由
 	setupReportRoutes(router, deps)
 }
 
@@ -69,9 +57,15 @@ func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 	authGroup.Use(middleware.JWTAuthMiddleware(deps.Cfg))
 	{
 		// 绑定车辆信息接口
-		authGroup.POST("/vehicles", deps.VehicleService.BindVehicle)
+		authGroup.POST("/vehicles", func(ctx *gin.Context) {
+			fmt.Println("Accessing /vehicles route")
+			deps.VehicleService.BindVehicle(ctx)
+		})
 		// 创建租赁记录接口
-		authGroup.POST("/lease", deps.LeaseService.CreateLease)
+		authGroup.POST("/lease", func(ctx *gin.Context) {
+			fmt.Println("Accessing /lease route")
+			deps.LeaseService.CreateLease(ctx)
+		})
 		// 获取用户停车位信息接口，添加日志确认执行
 		authGroup.GET("/parking/my-spots", func(ctx *gin.Context) {
 			// 临时添加日志，确认路由被访问
@@ -82,37 +76,40 @@ func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 		parking := authGroup.Group("/parking")
 		{
 			// 列出所有停车位信息接口
-			parking.GET("/spots", deps.ParkingService.ListSpots)
+			parking.GET("/spots", func(ctx *gin.Context) {
+				fmt.Println("Accessing /parking/spots route")
+				deps.ParkingService.ListSpots(ctx)
+			})
 			// 车辆进入停车场接口
-			parking.POST("/entry", deps.ParkingService.Entry)
+			parking.POST("/entry", func(ctx *gin.Context) {
+				fmt.Println("Accessing /parking/entry route")
+				deps.ParkingService.Entry(ctx)
+			})
 			// 车辆离开停车场接口
-			parking.POST("/exit/:id", deps.ParkingService.Exit)
+			parking.POST("/exit/:id", func(ctx *gin.Context) {
+				fmt.Println("Accessing /parking/exit/:id route")
+				deps.ParkingService.Exit(ctx)
+			})
 			// 发布车辆出租信息接口
-			parking.POST("/rent", deps.VehicleService.PublishForRent)
+			parking.POST("/rent", func(ctx *gin.Context) {
+				fmt.Println("Accessing /parking/rent route")
+				deps.VehicleService.PublishForRent(ctx)
+			})
 		}
 
 		owner := authGroup.Group("/owner").Use(middleware.RoleCheck(models.Owner))
 		{
 			// 业主购买停车位接口
-			owner.POST("/purchase", deps.OwnerService.PurchaseSpot)
+			owner.POST("/purchase", func(ctx *gin.Context) {
+				fmt.Println("Accessing /owner/purchase route")
+				deps.OwnerService.PurchaseSpot(ctx)
+			})
 			// 业主创建停车位接口
-			owner.POST("/spots", deps.ParkingService.CreateSpot)
+			owner.POST("/spots", func(ctx *gin.Context) {
+				fmt.Println("Accessing /owner/spots route")
+				deps.ParkingService.CreateSpot(ctx)
+			})
 		}
-	}
-}
-
-// setupAdminRoutes 配置管理员专属路由组
-func setupAdminRoutes(router *gin.Engine, deps *RouterDependencies) {
-	router.POST("/admin/login", deps.AdminService.AdminLogin)
-
-	admin := router.Group("/admin").Use(middleware.RoleCheck(models.Admin))
-	{
-		// 更新停车位状态接口
-		admin.PUT("/spots/:id/status", deps.AdminService.UpdateSpotStatus)
-		// 获取系统统计信息接口
-		admin.GET("/stats", deps.AdminService.GetSystemStats)
-		// 管理员创建停车位接口
-		admin.POST("/spots", deps.ParkingService.CreateSpot)
 	}
 }
 
