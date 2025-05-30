@@ -82,34 +82,41 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 	return nil
 }
 
-// GenerateToken 生成 JWT 令牌
-func (s *AuthService) GenerateToken(userID uint, username string, roles []string) (string, error) {
+// GenerateJWT 生成 JWT 令牌
+func GenerateJWT(secret string, userID uint, username string, roles []string, expiresIn time.Duration) (string, error) {
 	claims := &Claims{
 		UserID:   userID,
 		Username: username,
 		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.Cfg.JWT.Secret))
+	return token.SignedString([]byte(secret))
 }
 
-func (s *AuthService) ValidateToken(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+// ValidateToken 验证 JWT 令牌
+func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
 		return []byte(s.Cfg.JWT.Secret), nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
+
+	log.Printf("令牌无效")
 	return nil, jwt.ErrTokenInvalidClaims
 }
 
