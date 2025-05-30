@@ -37,12 +37,15 @@ func main() {
 	if err := os.MkdirAll(logDir, os.ModePerm); err != nil {
 		log.Fatalf("创建日志目录失败: %v", err)
 	}
+	logPath := filepath.Join(logDir, "parking.log")
+	// 将日志文件路径设置到配置中
+	cfg.LogFilePath = logPath
 
-	// 使用配置初始化日志记录器
+	// 打印日志文件路径，用于调试
+	fmt.Printf("日志文件路径: %s\n", cfg.LogFilePath)
+
+	// 使用配置重新初始化日志记录器
 	logger.InitLogger(cfg)
-	if logger.Log == nil {
-		log.Fatal("日志记录器初始化失败，日志记录器为 nil")
-	}
 	defer func() {
 		if logger.Log != nil {
 			logger.Log.Sync()
