@@ -220,3 +220,18 @@
 {"level":"info","time":"2025-05-31T00:37:03.776+0800","caller":"api/main.go:106","msg":"Registered Route","Method":"POST","Path":"/vehicles","Handler":"modules/internal/controllers.(*VehicleController).BindVehicle-fm"}
 {"level":"info","time":"2025-05-31T00:37:03.776+0800","caller":"api/main.go:106","msg":"Registered Route","Method":"POST","Path":"/lease","Handler":"modules/internal/controllers.(*LeaseController).CreateLease-fm"}
 {"level":"info","time":"2025-05-31T00:37:03.777+0800","caller":"api/main.go:123","msg":"服务将启动在端口","port":"8080"}
+{"level":"info","time":"2025-05-31T00:44:37.739+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"GET","Path":"/parking/my-spots","Handler":"modules/internal/controllers.(*ParkingController).GetUserSpots-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.739+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"GET","Path":"/parking/spots","Handler":"modules/internal/controllers.(*ParkingController).ListSpots-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.739+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"GET","Path":"/swagger/*any","Handler":"github.com/swaggo/gin-swagger.CustomWrapHandler.func1"}
+{"level":"info","time":"2025-05-31T00:44:37.739+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"GET","Path":"/reports/daily","Handler":"modules/internal/controllers.(*ReportController).GetDailyReport-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/auth/register","Handler":"modules/internal/controllers.(*AuthController).Register-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/auth/login","Handler":"modules/internal/controllers.(*AuthController).UserLogin-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/admin/login","Handler":"modules/internal/controllers.(*AdminController).AdminLogin-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/parking/entry","Handler":"modules/internal/controllers.(*ParkingController).Entry-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/parking/exit/:id","Handler":"modules/internal/controllers.(*ParkingController).Exit-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/parking/rent","Handler":"modules/internal/controllers.(*VehicleController).PublishForRent-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/owner/purchase","Handler":"modules/internal/controllers.(*OwnerController).PurchaseSpot-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/owner/spots","Handler":"modules/internal/controllers.(*ParkingController).CreateSpot-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/vehicles","Handler":"modules/internal/controllers.(*VehicleController).BindVehicle-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.740+0800","caller":"api/main.go:102","msg":"Registered Route","Method":"POST","Path":"/lease","Handler":"modules/internal/controllers.(*LeaseController).CreateLease-fm"}
+{"level":"info","time":"2025-05-31T00:44:37.741+0800","caller":"api/main.go:119","msg":"服务将启动在端口","port":"8080"}

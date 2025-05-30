@@ -20,8 +20,7 @@ import (
 )
 
 func main() {
-	configPath := filepath.Join(".", "config", "config.yaml")
-	cfg, err := config.LoadConfig(configPath)
+	cfg, err := config.LoadConfig("config/config.yaml")
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
 	}
