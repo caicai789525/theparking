@@ -65,10 +65,9 @@ func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 	{
 		// 绑定车辆信息接口
 		authGroup.POST("/vehicles", logMiddleware("/vehicles"), deps.VehicleService.BindVehicle)
+
 		// 创建租赁记录接口
 		authGroup.POST("/lease", logMiddleware("/lease"), deps.LeaseService.CreateLease)
-		// 获取用户停车位信息接口，修正路由路径拼写错误
-		authGroup.GET("/parking/my-spots", logMiddleware("/parking/my-spots"), deps.ParkingService.GetUserSpots)
 
 		parking := authGroup.Group("/parking")
 		{
