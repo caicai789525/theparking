@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"log"
 	"modules/config"
 	"modules/internal/controllers"
 	"modules/internal/repositories"
@@ -15,15 +16,42 @@ import (
 	"modules/pkg/database"
 	"modules/pkg/logger"
 	"os"
+	"path/filepath"
 )
 
 func main() {
-	// 加载配置
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		// 处理配置加载失败的情况
-		logger.Log.Fatal("加载配置失败", zap.Error(err))
+		log.Fatalf("加载配置失败: %v", err)
 	}
+
+	// 获取当前工作目录
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("获取当前工作目录失败: %v", err)
+	}
+
+	// 构建日志文件路径
+	logDir := filepath.Join(dir, "log")
+	// 确保日志目录存在
+	if err := os.MkdirAll(logDir, os.ModePerm); err != nil {
+		log.Fatalf("创建日志目录失败: %v", err)
+	}
+	logPath := filepath.Join(logDir, "parking.log")
+	// 将日志文件路径设置到配置中
+	cfg.LogFilePath = logPath
+
+	// 使用配置初始化日志记录器
+	logger.InitLogger(cfg)
+	if logger.Log == nil {
+		log.Fatal("日志记录器初始化失败，日志记录器为 nil")
+	}
+	defer func() {
+		if logger.Log != nil {
+			logger.Log.Sync()
+		}
+	}()
 
 	// 构建数据库连接字符串
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
