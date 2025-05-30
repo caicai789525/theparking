@@ -152,7 +152,7 @@ func main() {
 
 	// 注册路由时传入 router
 	routes.SetupRouter(router, &routes.RouterDependencies{
-		AuthService:    ctrls.AuthController,
+		AuthController: ctrls.AuthController,
 		ParkingService: ctrls.ParkingController,
 		AdminService:   ctrls.AdminController,
 		LeaseService:   ctrls.LeaseController,
@@ -166,6 +166,7 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	// 直接从环境变量获取端口号，若未设置则使用默认值 8080
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
