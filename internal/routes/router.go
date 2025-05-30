@@ -10,10 +10,12 @@ import (
 	"modules/internal/controllers"
 	"modules/internal/middleware"
 	"modules/internal/models"
+	"modules/internal/services"
 )
 
 // RouterDependencies 定义路由所需的依赖项
 type RouterDependencies struct {
+	AuthService    *services.AuthService
 	AuthController *controllers.AuthController
 	ParkingService *controllers.ParkingController
 	AdminService   *controllers.AdminController
@@ -62,9 +64,9 @@ func setupPublicRoutes(router *gin.Engine, deps *RouterDependencies) {
 
 // setupAuthRoutes 配置需要身份验证的路由组
 func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
-	authGroup := router.Group("")
+	authGroup := router.Group("/")
 	// 应用 JWT 身份验证中间件
-	authGroup.Use(middleware.JWTAuthMiddleware(deps.Cfg))
+	authGroup.Use(middleware.JWTAuthMiddleware(deps.Cfg, deps.AuthService))
 	{
 		// 绑定车辆信息接口
 		authGroup.POST("/vehicles", logMiddleware("/vehicles"), deps.VehicleService.BindVehicle)
@@ -99,7 +101,7 @@ func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 func setupReportRoutes(router *gin.Engine, deps *RouterDependencies) {
 	report := router.Group("/reports")
 	// 应用 JWT 身份验证中间件
-	report.Use(middleware.JWTAuthMiddleware(deps.Cfg))
+	report.Use(middleware.JWTAuthMiddleware(deps.Cfg, deps.AuthService))
 	{
 		// 获取每日报表信息接口
 		report.GET("/daily", logMiddleware("/reports/daily"), deps.ReportService.GetDailyReport)
