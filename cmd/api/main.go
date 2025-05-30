@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"log"
@@ -15,6 +14,7 @@ import (
 	"modules/pkg/database"
 	"modules/pkg/logger"
 	"os"
+	"path/filepath"
 
 	"gorm.io/gorm"
 )
@@ -108,10 +108,6 @@ func main() {
 		// 处理配置加载失败的情况
 		logger.Log.Fatal("加载配置失败", zap.Error(err))
 	}
-	defer logger.Log.Sync()
-
-	// 使用配置重新初始化日志记录器
-	logger.InitLogger(cfg.Env)
 
 	// 获取当前工作目录
 	dir, err := os.Getwd()
@@ -119,11 +115,23 @@ func main() {
 		log.Fatalf("获取当前工作目录失败: %v", err)
 	}
 
-	// 设置配置文件的相对路径
-	viper.SetConfigFile(dir + "/config/config.yaml")
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("读取配置文件出错: %v", err)
+	// 构建日志文件路径
+	logDir := filepath.Join(dir, "log")
+	// 确保日志目录存在
+	if err := os.MkdirAll(logDir, os.ModePerm); err != nil {
+		log.Fatalf("创建日志目录失败: %v", err)
 	}
+	logPath := filepath.Join(logDir, "parking.log")
+	// 设置日志文件路径到配置中
+	cfg.LogFilePath = logPath
+
+	// 使用配置重新初始化日志记录器
+	logger.InitLogger(cfg)
+	defer func() {
+		if logger.Log != nil {
+			logger.Log.Sync()
+		}
+	}()
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.DB.User,

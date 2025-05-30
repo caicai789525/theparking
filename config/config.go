@@ -8,10 +8,11 @@ import (
 )
 
 type Config struct {
-	Env  string         `mapstructure:"env"`
-	Port string         `mapstructure:"port"`
-	DB   DatabaseConfig `mapstructure:"db"`
-	JWT  JWTConfig      `mapstructure:"jwt"`
+	Env         string         `mapstructure:"env"`
+	Port        string         `mapstructure:"port"`
+	DB          DatabaseConfig `mapstructure:"db"`
+	JWT         JWTConfig      `mapstructure:"jwt"`
+	LogFilePath string
 }
 
 type DatabaseConfig struct {
