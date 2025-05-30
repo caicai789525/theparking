@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"log"
@@ -197,4 +198,13 @@ func main() {
 	if err := router.Run(":" + port); err != nil {
 		logger.Log.Fatal("服务启动失败", zap.Error(err))
 	}
+	logFile, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		logrus.Fatalf("Failed to open log file: %v", err)
+	}
+	defer logFile.Close()
+
+	logrus.SetOutput(logFile)
+	logrus.Info("This is an info log")
+	logrus.Error("This is an error log")
 }
