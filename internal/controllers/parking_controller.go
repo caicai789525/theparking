@@ -220,7 +220,14 @@ func (c *ParkingController) GetUserSpots(ctx *gin.Context) {
 		return
 	}
 
-	spots, err := c.service.GetUserSpots(ctx, userID.(uint))
+	// 显式类型断言
+	uid, ok := userID.(uint)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "无法从上下文中获取有效的用户 ID"})
+		return
+	}
+
+	spots, err := c.service.GetUserSpots(ctx, uid)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

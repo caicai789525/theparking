@@ -1,20 +1,20 @@
-// internal/middleware/auth.go
 package middleware
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"go.uber.org/zap"
 	"modules/config"
+	"modules/pkg/logger"
 	"net/http"
 	"strings"
 )
 
-// 示例 JWT 中间件
 func JWTAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			// 这里应该返回 401 错误，而非 404
+			logger.Log.Error("未提供认证头", zap.String("path", ctx.Request.URL.Path))
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "未提供认证头"})
 			return
 		}
@@ -26,17 +26,24 @@ func JWTAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			}
 			return []byte(cfg.JWT.SecretKey), nil
 		})
-		// 处理解析错误
+
 		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "令牌解析失败: " + err.Error()})
+			logger.Log.Error("令牌解析失败", zap.String("path", ctx.Request.URL.Path), zap.Error(err))
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "无效的令牌"})
 			return
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			ctx.Set("userID", uint(claims["user_id"].(float64)))
+			userID, ok := claims["user_id"].(float64)
+			if !ok {
+				logger.Log.Error("无法从令牌中获取用户 ID", zap.String("path", ctx.Request.URL.Path))
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "无效的令牌"})
+				return
+			}
+			ctx.Set("userID", uint(userID))
 			ctx.Next()
 		} else {
-			// 这里应该返回 401 错误，而非 404
+			logger.Log.Error("无效的令牌", zap.String("path", ctx.Request.URL.Path))
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "无效的令牌"})
 		}
 	}

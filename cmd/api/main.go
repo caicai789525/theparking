@@ -169,16 +169,17 @@ func main() {
 		Cfg:            ctrls.Cfg,
 	})
 
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
-
+	// 打印所有注册的路由，用于调试
 	for _, route := range router.Routes() {
 		logger.Log.Info("Registered Route",
 			zap.String("Method", route.Method),
 			zap.String("Path", route.Path),
 			zap.String("Handler", route.Handler))
 	}
+
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
 
 	// 直接从环境变量获取端口号，若未设置则使用默认值 8080
 	port := os.Getenv("PORT")
