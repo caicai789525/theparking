@@ -148,3 +148,17 @@
 {"L":"INFO","T":"2025-05-30T18:27:24.116+0800","M":"Registered Route","Method":"POST","Path":"/vehicles","Handler":"modules/internal/routes.setupAuthRoutes.func1"}
 {"L":"INFO","T":"2025-05-30T18:27:24.116+0800","M":"Registered Route","Method":"POST","Path":"/lease","Handler":"modules/internal/routes.setupAuthRoutes.func2"}
 {"L":"INFO","T":"2025-05-30T18:27:24.116+0800","M":"服务将启动在端口","port":"8080"}
+{"L":"INFO","T":"2025-05-30T18:34:32.432+0800","M":"Registered Route","Method":"GET","Path":"/parking/my-spots","Handler":"modules/internal/routes.setupAuthRoutes.func3"}
+{"L":"INFO","T":"2025-05-30T18:34:32.432+0800","M":"Registered Route","Method":"GET","Path":"/parking/spots","Handler":"modules/internal/routes.setupAuthRoutes.func4"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"GET","Path":"/swagger/*any","Handler":"github.com/swaggo/gin-swagger.CustomWrapHandler.func1"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"GET","Path":"/reports/daily","Handler":"modules/internal/controllers.(*ReportController).GetDailyReport-fm"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/parking/entry","Handler":"modules/internal/routes.setupAuthRoutes.func5"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/parking/exit/:id","Handler":"modules/internal/routes.setupAuthRoutes.func6"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/parking/rent","Handler":"modules/internal/routes.setupAuthRoutes.func7"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/auth/register","Handler":"modules/internal/controllers.(*AuthController).Register-fm"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/auth/login","Handler":"modules/internal/controllers.(*AuthController).UserLogin-fm"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/owner/purchase","Handler":"modules/internal/routes.setupAuthRoutes.func8"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/owner/spots","Handler":"modules/internal/routes.setupAuthRoutes.func9"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/vehicles","Handler":"modules/internal/routes.setupAuthRoutes.func1"}
+{"L":"INFO","T":"2025-05-30T18:34:32.433+0800","M":"Registered Route","Method":"POST","Path":"/lease","Handler":"modules/internal/routes.setupAuthRoutes.func2"}
+{"L":"INFO","T":"2025-05-30T18:34:32.435+0800","M":"服务将启动在端口","port":"8080"}
