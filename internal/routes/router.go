@@ -13,7 +13,6 @@ import (
 )
 
 type RouterDependencies struct {
-	AuthService    *controllers.AuthController
 	AuthController *controllers.AuthController
 	ParkingService *controllers.ParkingController
 	AdminService   *controllers.AdminController

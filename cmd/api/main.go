@@ -166,8 +166,10 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// 直接设置端口为 8080
-	port := "8080"
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	logger.Log.Info("服务将启动在端口", zap.String("port", port))
 	if err := router.Run(":" + port); err != nil {
 		logger.Log.Fatal("服务启动失败", zap.Error(err))
