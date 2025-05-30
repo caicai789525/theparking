@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5" // 导入 JWT 包
 	"gorm.io/gorm"
 	"log"
 	"modules/config"
@@ -21,43 +21,15 @@ type AuthService struct {
 	Cfg      *config.Config
 }
 
-// GenerateToken 生成 JWT 令牌
-func (s *AuthService) GenerateToken(userID uint, role string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
-		"role":    role,
-		"exp":     time.Now().Add(s.Cfg.JWT.ExpiresIn).Unix(),
-	})
-	// 使用配置中的密钥进行签名
-	return token.SignedString([]byte(s.Cfg.JWT.Secret))
+// Claims 定义 JWT 声明结构
+type Claims struct {
+	UserID   uint     `json:"user_id"`
+	Username string   `json:"username"`
+	Roles    []string `json:"roles"`
+	jwt.RegisteredClaims
 }
 
-// ValidateToken 验证 JWT 令牌
-func (s *AuthService) ValidateToken(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrSignatureInvalid
-		}
-		// 使用配置中的密钥进行验证
-		return []byte(s.Cfg.JWT.Secret), nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return claims, nil
-	}
-	return nil, jwt.ErrTokenInvalidClaims
-}
-
-// NewAuthService 创建一个新的 AuthService 实例
 func NewAuthService(userRepo repositories.UserRepository, cfg *config.Config) *AuthService {
-	if userRepo == nil {
-		panic("userRepo 不能为 nil")
-	}
-	if cfg == nil {
-		panic("配置不能为 nil")
-	}
 	return &AuthService{
 		userRepo: userRepo,
 		Cfg:      cfg,
@@ -108,6 +80,37 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 	}
 
 	return nil
+}
+
+// GenerateToken 生成 JWT 令牌
+func (s *AuthService) GenerateToken(userID uint, username string, roles []string) (string, error) {
+	claims := &Claims{
+		UserID:   userID,
+		Username: username,
+		Roles:    roles,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.Cfg.JWT.Secret))
+}
+
+func (s *AuthService) ValidateToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return []byte(s.Cfg.JWT.Secret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+	return nil, jwt.ErrTokenInvalidClaims
 }
 
 // Login 用户/管理员通用登录方法
