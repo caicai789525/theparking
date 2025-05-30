@@ -3,6 +3,7 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
+	"log"
 	"modules/config"
 	utils "modules/internal/utils"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 // internal/middleware/auth.go
 func JWTAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		log.Println("进入 JWTAuthMiddleware，请求路径:", c.Request.URL.Path)
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "未提供认证令牌"})
