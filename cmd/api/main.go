@@ -60,56 +60,29 @@ func CORSMiddleware() gin.HandlerFunc {
 func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependencies {
 	// Repos
 	userRepo := repositories.NewUserRepo(db)
-	fmt.Printf("UserRepo initialized: %+v\n", userRepo)
 	parkingRepo := repositories.NewParkingRepo(db)
-	fmt.Printf("ParkingRepo initialized: %+v\n", parkingRepo)
 	purchaseRepo := repositories.NewPurchaseRepo(db)
-	fmt.Printf("PurchaseRepo initialized: %+v\n", purchaseRepo)
 	reportRepo := repositories.NewReportRepo(db)
-	fmt.Printf("ReportRepo initialized: %+v\n", reportRepo)
 	leaseRepo := repositories.NewLeaseRepo(db)
-	fmt.Printf("LeaseRepo initialized: %+v\n", leaseRepo)
 	vehicleRepo := repositories.NewVehicleRepo(db)
-	fmt.Printf("VehicleRepo initialized: %+v\n", vehicleRepo)
 
 	// Services
 	authService := services.NewAuthService(userRepo, cfg)
-	fmt.Printf("AuthService initialized: %+v\n", authService)
 	parkingService := services.NewParkingService(parkingRepo, userRepo)
-	fmt.Printf("ParkingService initialized: %+v\n", parkingService)
 	ownerService := services.NewOwnerService(parkingRepo, userRepo, purchaseRepo)
-	fmt.Printf("OwnerService initialized: %+v\n", ownerService)
 	reportService := services.NewReportService(reportRepo, parkingRepo)
-	fmt.Printf("ReportService initialized: %+v\n", reportService)
 	leaseService := services.NewLeaseService(leaseRepo, parkingRepo)
-	fmt.Printf("LeaseService initialized: %+v\n", leaseService)
 	vehicleService := services.NewVehicleService(vehicleRepo, userRepo, parkingRepo, leaseService)
-	fmt.Printf("VehicleService initialized: %+v\n", vehicleService)
 
 	// Controllers
-	authController := controllers.NewAuthController(authService)
-	fmt.Printf("AuthController initialized: %+v\n", authController)
-	parkingController := controllers.NewParkingController(parkingService)
-	fmt.Printf("ParkingController initialized: %+v\n", parkingController)
-	adminController := controllers.NewAdminController(parkingService, reportService)
-	fmt.Printf("AdminController initialized: %+v\n", adminController)
-	leaseController := controllers.NewLeaseController(leaseService)
-	fmt.Printf("LeaseController initialized: %+v\n", leaseController)
-	reportController := controllers.NewReportController(reportService)
-	fmt.Printf("ReportController initialized: %+v\n", reportController)
-	vehicleController := controllers.NewVehicleController(vehicleService)
-	fmt.Printf("VehicleController initialized: %+v\n", vehicleController)
-	ownerController := controllers.NewOwnerController(ownerService)
-	fmt.Printf("OwnerController initialized: %+v\n", ownerController)
-
 	return &ControllerDependencies{
-		AuthController:    authController,
-		ParkingController: parkingController,
-		AdminController:   adminController,
-		LeaseController:   leaseController,
-		ReportController:  reportController,
-		VehicleController: vehicleController,
-		OwnerController:   ownerController,
+		AuthController:    controllers.NewAuthController(authService),
+		ParkingController: controllers.NewParkingController(parkingService),
+		AdminController:   controllers.NewAdminController(parkingService, reportService),
+		LeaseController:   controllers.NewLeaseController(leaseService),
+		ReportController:  controllers.NewReportController(reportService),
+		VehicleController: controllers.NewVehicleController(vehicleService),
+		OwnerController:   controllers.NewOwnerController(ownerService),
 		Cfg:               cfg,
 	}
 }
@@ -124,11 +97,6 @@ func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependenc
 
 // @host localhost:8080
 // @BasePath /
-
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description 使用 JWT 格式的令牌进行授权。格式：Bearer <token>
 
 func main() {
 	cfg, err := config.LoadConfig()
@@ -160,6 +128,15 @@ func main() {
 			logger.Log.Sync()
 		}
 	}()
+
+	// 初始化 logrus 日志记录器
+	logrusLogPath := filepath.Join(logDir, "app.log")
+	logrusFile, err := os.OpenFile(logrusLogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		logrus.Fatalf("Failed to open log file: %v", err)
+	}
+	defer logrusFile.Close()
+	logrus.SetOutput(logrusFile)
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.DB.User,
@@ -209,9 +186,7 @@ func main() {
 			zap.String("Method", route.Method),
 			zap.String("Path", route.Path),
 			zap.String("Handler", route.Handler))
-	}
-	for _, route := range router.Routes() {
-		fmt.Printf("Method: %s, Path: %s, Handler: %s\n", route.Method, route.Path, route.Handler)
+		logrus.Infof("Method: %s, Path: %s, Handler: %s", route.Method, route.Path, route.Handler)
 	}
 
 	router.GET("/health", func(c *gin.Context) {
@@ -224,16 +199,9 @@ func main() {
 		port = "8080"
 	}
 	logger.Log.Info("服务将启动在端口", zap.String("port", port))
+	logrus.Infof("服务将启动在端口 %s", port)
 	if err := router.Run(":" + port); err != nil {
 		logger.Log.Fatal("服务启动失败", zap.Error(err))
+		logrus.Fatalf("服务启动失败: %v", err)
 	}
-	logFile, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		logrus.Fatalf("Failed to open log file: %v", err)
-	}
-	defer logFile.Close()
-
-	logrus.SetOutput(logFile)
-	logrus.Info("This is an info log")
-	logrus.Error("This is an error log")
 }
