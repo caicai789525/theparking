@@ -37,13 +37,19 @@ func (s *ParkingService) CalculateFee(record *models.ParkingRecord, spot *models
 
 	duration := record.ExitTime.Sub(record.EntryTime).Hours()
 
-	switch spot.Type {
-	case models.ShortTerm:
-		if spot.ExpiresAt != nil && time.Now().After(*spot.ExpiresAt) {
-			return duration * spot.HourlyRate
+	// 将 spot.Type 与 string 类型的枚举值进行比较
+	switch string(spot.Type) {
+	case string(models.ShortTerm):
+		// 当 ExpiresAt 不为空字符串时进行解析
+		if spot.ExpiresAt != "" {
+			// 假设 ExpiresAt 格式为 RFC3339，可根据实际情况调整
+			expiresAt, err := time.Parse(time.RFC3339, spot.ExpiresAt)
+			if err == nil && time.Now().After(expiresAt) {
+				return duration * spot.HourlyRate
+			}
 		}
 		return 0
-	case models.Temporary:
+	case string(models.Temporary):
 		return duration * spot.HourlyRate
 	default:
 		return 0
@@ -131,7 +137,8 @@ func (s *ParkingService) UpdateSpotStatus(
 		return nil, fmt.Errorf("获取车位失败: %w", err)
 	}
 
-	spot.Status = status
+	// 将 models.ParkingStatus 类型的 status 转换为 string 类型
+	spot.Status = string(status)
 	spot.Notes = notes // 假设 models.ParkingSpot 有 Notes 字段
 
 	if err := s.parkingRepo.UpdateSpot(ctx, spot); err != nil {
@@ -197,9 +204,11 @@ func (s *ParkingService) CreateSpot(
 	// 设置默认费率
 	if spot.HourlyRate == 0 {
 		switch spot.Type {
-		case models.Temporary:
+		// 将 models.Temporary 转换为 string 类型
+		case string(models.Temporary):
 			spot.HourlyRate = 5 // 默认临时车位费率
-		case models.ShortTerm:
+		// 将 models.ShortTerm 转换为 string 类型
+		case string(models.ShortTerm):
 			spot.MonthlyRate = 300 // 默认短租月费
 		}
 	}

@@ -81,7 +81,7 @@ func (r *parkingRepo) OccupySpot(
 			return err
 		}
 
-		if spot.Status != models.Idle {
+		if spot.Status != "Idle" {
 			return errors.New("停车位不可用")
 		}
 

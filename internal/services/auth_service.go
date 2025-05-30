@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goccy/go-json"
+	"gorm.io/gorm"
 	"modules/config"
 	"modules/internal/models"
 	"modules/internal/repositories"
@@ -51,11 +52,14 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 func (s *AuthService) Login(ctx context.Context, username, password string, checkAdmin bool) (string, error) {
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", errors.New("用户不存在")
+		}
 		return "", fmt.Errorf("查询用户失败: %w", err)
 	}
 
 	if err := user.CheckPassword(password); err != nil {
-		return "", fmt.Errorf("密码验证失败: %w", err)
+		return "", errors.New("密码错误")
 	}
 
 	var roles []models.Role
@@ -91,4 +95,9 @@ func (s *AuthService) Login(ctx context.Context, username, password string, chec
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.Cfg.JWT.Secret))
+}
+
+// AdminLogin 管理员登录方法，复用 Login 方法
+func (s *AuthService) AdminLogin(ctx context.Context, username, password string) (string, error) {
+	return s.Login(ctx, username, password, true)
 }

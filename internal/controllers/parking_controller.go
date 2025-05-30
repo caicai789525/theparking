@@ -203,6 +203,7 @@ func (c *ParkingController) CreateSpot(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, ToParkingSpotResponse(createdSpot))
 }
 
+// @Router /parking/my-spots [get]
 // @Summary 查询自己的车位
 // @Description 查询当前用户名下的所有车位信息
 // @Tags parking
@@ -211,7 +212,6 @@ func (c *ParkingController) CreateSpot(ctx *gin.Context) {
 // @Success 200 {array} models.ParkingSpot "返回用户的车位列表"
 // @Failure 401 {object} ErrorResponse "未授权访问"
 // @Failure 500 {object} ErrorResponse "服务器内部错误"
-// @Router /parking/my-spots [get]
 func (c *ParkingController) GetUserSpots(ctx *gin.Context) {
 	userID, exists := ctx.Get("userID")
 	if !exists {
@@ -226,5 +226,4 @@ func (c *ParkingController) GetUserSpots(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, spots)
-	ctx.JSON(http.StatusOK, gin.H{"message": "获取用户停车位信息"})
 }

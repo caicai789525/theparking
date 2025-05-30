@@ -60,7 +60,7 @@ func (s *ReportService) GetSpotStats(ctx context.Context) (map[string]interface{
 	var total, available int
 	for _, spot := range spots {
 		total++
-		if spot.Status == models.Idle {
+		if spot.Status == "Idle" {
 			available++
 		}
 	}

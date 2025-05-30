@@ -98,6 +98,8 @@ func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 
 // setupAdminRoutes 配置管理员专属路由组
 func setupAdminRoutes(router *gin.Engine, deps *RouterDependencies) {
+	router.POST("/admin/login", deps.AdminService.AdminLogin)
+
 	admin := router.Group("/admin").Use(middleware.RoleCheck(models.Admin))
 	{
 		// 更新停车位状态接口
@@ -107,8 +109,6 @@ func setupAdminRoutes(router *gin.Engine, deps *RouterDependencies) {
 		// 管理员创建停车位接口
 		admin.POST("/spots", deps.ParkingService.CreateSpot)
 	}
-	// 管理员登录接口
-	router.POST("/admin/login", deps.AuthController.AdminLogin)
 }
 
 // setupReportRoutes 配置报表相关路由组

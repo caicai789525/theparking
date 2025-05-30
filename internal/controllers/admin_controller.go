@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"modules/internal/models"
 	"modules/internal/services"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 type AdminController struct {
 	parkingService *services.ParkingService
 	reportService  *services.ReportService
+	authService    *services.AuthService
 }
 
 func NewAdminController(ps *services.ParkingService, rs *services.ReportService) *AdminController {
@@ -111,4 +113,41 @@ func (c *AdminController) GetSystemStats(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, stats)
+}
+
+type AdminLoginResponse struct {
+	// JWT Token
+	Token string `json:"token"`
+}
+
+// AdminLogin 管理员登录
+// @Summary 管理员登录
+// @Description 管理员登录并返回 JWT token
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param input body AdminLoginRequest true "登录信息"
+// @Success 200 {object} AdminLoginResponse "登录成功，返回token"
+// @Failure 400 {object} ErrorResponse "请求参数错误"
+// @Failure 401 {object} ErrorResponse "认证失败，用户名或密码错误"
+// @Failure 403 {object} ErrorResponse "非管理员用户，无权访问"
+// @Router /admin/login [post]
+func (c *AdminController) AdminLogin(ctx *gin.Context) {
+	var req AdminLoginRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	token, err := c.authService.AdminLogin(ctx, req.Username, req.Password)
+	if err != nil {
+		if errors.Is(err, errors.New("非管理员用户，无权访问")) {
+			ctx.JSON(http.StatusForbidden, ErrorResponse{Error: err.Error()})
+		} else {
+			ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, AdminLoginResponse{Token: token})
 }
