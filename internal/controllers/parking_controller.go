@@ -28,7 +28,9 @@ type CreateParkingSpotRequest struct {
 }
 
 func NewParkingController(service *services.ParkingService) *ParkingController {
-	return &ParkingController{service: service}
+	return &ParkingController{
+		service: service,
+	}
 }
 
 // @Summary 获取车位列表
@@ -224,4 +226,5 @@ func (c *ParkingController) GetUserSpots(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, spots)
+	ctx.JSON(http.StatusOK, gin.H{"message": "获取用户停车位信息"})
 }
