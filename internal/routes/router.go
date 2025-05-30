@@ -7,7 +7,6 @@ import (
 	"github.com/swaggo/gin-swagger"
 	"modules/config"
 	_ "modules/docs" // 注意：必须导入以启用 Swagger 文档生成
-
 	"modules/internal/controllers"
 	"modules/internal/middleware"
 	"modules/internal/models"
@@ -25,18 +24,20 @@ type RouterDependencies struct {
 	Cfg            *config.Config
 }
 
+// logMiddleware 公共日志中间件，记录路由访问信息
+func logMiddleware(routePath string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		fmt.Printf("Accessing %s route\n", routePath)
+		c.Next()
+	}
+}
+
 // SetupRouter 配置路由
 func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
-	fmt.Println("Entering SetupRouter")
 	setupSwaggerRoutes(router)
-	fmt.Println("setupSwaggerRoutes completed")
 	setupPublicRoutes(router, deps)
-	fmt.Println("setupPublicRoutes completed")
 	setupAuthRoutes(router, deps)
-	fmt.Println("setupAuthRoutes completed")
 	setupReportRoutes(router, deps)
-	fmt.Println("setupReportRoutes completed")
-	fmt.Println("Exiting SetupRouter")
 }
 
 // setupSwaggerRoutes 配置 Swagger 文档的访问路由
@@ -63,59 +64,30 @@ func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 	authGroup.Use(middleware.JWTAuthMiddleware(deps.Cfg))
 	{
 		// 绑定车辆信息接口
-		authGroup.POST("/vehicles", func(ctx *gin.Context) {
-			fmt.Println("Accessing /vehicles route")
-			deps.VehicleService.BindVehicle(ctx)
-		})
+		authGroup.POST("/vehicles", logMiddleware("/vehicles"), deps.VehicleService.BindVehicle)
 		// 创建租赁记录接口
-		authGroup.POST("/lease", func(ctx *gin.Context) {
-			fmt.Println("Accessing /lease route")
-			deps.LeaseService.CreateLease(ctx)
-		})
+		authGroup.POST("/lease", logMiddleware("/lease"), deps.LeaseService.CreateLease)
+		// 获取用户停车位信息接口，修正路由路径拼写错误
+		authGroup.GET("/parking/my-spots", logMiddleware("/parking/my-spots"), deps.ParkingService.GetUserSpots)
 
 		parking := authGroup.Group("/parking")
 		{
-			// 获取用户停车位信息接口，添加日志确认执行
-			parking.GET("/myspots", func(ctx *gin.Context) {
-				fmt.Println("请求到达 /parking/my-spots 路由")
-				// 临时添加日志，确认路由被访问
-				fmt.Println("Accessing /parking/my-spots route")
-				deps.ParkingService.GetUserSpots(ctx)
-			})
 			// 列出所有停车位信息接口
-			parking.GET("/spots", func(ctx *gin.Context) {
-				fmt.Println("Accessing /parking/spots route")
-				deps.ParkingService.ListSpots(ctx)
-			})
+			parking.GET("/spots", logMiddleware("/parking/spots"), deps.ParkingService.ListSpots)
 			// 车辆进入停车场接口
-			parking.POST("/entry", func(ctx *gin.Context) {
-				fmt.Println("Accessing /parking/entry route")
-				deps.ParkingService.Entry(ctx)
-			})
+			parking.POST("/entry", logMiddleware("/parking/entry"), deps.ParkingService.Entry)
 			// 车辆离开停车场接口
-			parking.POST("/exit/:id", func(ctx *gin.Context) {
-				fmt.Println("Accessing /parking/exit/:id route")
-				deps.ParkingService.Exit(ctx)
-			})
+			parking.POST("/exit/:id", logMiddleware("/parking/exit/:id"), deps.ParkingService.Exit)
 			// 发布车辆出租信息接口
-			parking.POST("/rent", func(ctx *gin.Context) {
-				fmt.Println("Accessing /parking/rent route")
-				deps.VehicleService.PublishForRent(ctx)
-			})
+			parking.POST("/rent", logMiddleware("/parking/rent"), deps.VehicleService.PublishForRent)
 		}
 
 		owner := authGroup.Group("/owner").Use(middleware.RoleCheck(models.Owner))
 		{
 			// 业主购买停车位接口
-			owner.POST("/purchase", func(ctx *gin.Context) {
-				fmt.Println("Accessing /owner/purchase route")
-				deps.OwnerService.PurchaseSpot(ctx)
-			})
+			owner.POST("/purchase", logMiddleware("/owner/purchase"), deps.OwnerService.PurchaseSpot)
 			// 业主创建停车位接口
-			owner.POST("/spots", func(ctx *gin.Context) {
-				fmt.Println("Accessing /owner/spots route")
-				deps.ParkingService.CreateSpot(ctx)
-			})
+			owner.POST("/spots", logMiddleware("/owner/spots"), deps.ParkingService.CreateSpot)
 		}
 	}
 }
@@ -127,6 +99,6 @@ func setupReportRoutes(router *gin.Engine, deps *RouterDependencies) {
 	report.Use(middleware.JWTAuthMiddleware(deps.Cfg))
 	{
 		// 获取每日报表信息接口
-		report.GET("/daily", deps.ReportService.GetDailyReport)
+		report.GET("/daily", logMiddleware("/reports/daily"), deps.ReportService.GetDailyReport)
 	}
 }

@@ -17,6 +17,7 @@ import (
 type ParkingRepository interface {
 	CreateSpot(ctx context.Context, spot *models.ParkingSpot) error
 	GetSpotByID(ctx context.Context, id uint) (*models.ParkingSpot, error)
+	GetUserSpots(ctx context.Context, userID uint) ([]*models.ParkingSpot, error)
 	UpdateSpot(ctx context.Context, spot *models.ParkingSpot) error
 	DeleteSpot(ctx context.Context, id uint) error
 	ListSpots(ctx context.Context, filter SpotFilter) ([]*models.ParkingSpot, error)
@@ -27,7 +28,6 @@ type ParkingRepository interface {
 	OccupySpot(ctx context.Context, spotID uint, license string, userID *uint) (*models.ParkingRecord, error)
 	ReleaseSpot(ctx context.Context, recordID uint) (*models.ParkingRecord, error)
 	UpdateRecord(ctx context.Context, record *models.ParkingRecord) (*models.ParkingRecord, error)
-	GetUserSpots(ctx context.Context, userID uint) ([]*models.ParkingSpot, error)
 }
 
 type parkingRepo struct {

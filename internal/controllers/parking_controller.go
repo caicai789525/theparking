@@ -2,6 +2,7 @@
 package controllers
 
 import (
+	"golang.org/x/net/context"
 	"modules/internal/models"
 	"modules/internal/services"
 	"net/http"
@@ -204,7 +205,7 @@ func (c *ParkingController) CreateSpot(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, ToParkingSpotResponse(createdSpot))
 }
 
-// @Router /parking/my-spots [get]
+// GetUserSpots 查询当前用户名下的所有车位信息
 // @Summary 查询自己的车位
 // @Description 查询当前用户名下的所有车位信息
 // @Tags parking
@@ -213,6 +214,7 @@ func (c *ParkingController) CreateSpot(ctx *gin.Context) {
 // @Success 200 {array} models.ParkingSpot "返回用户的车位列表"
 // @Failure 401 {object} ErrorResponse "未授权访问"
 // @Failure 500 {object} ErrorResponse "服务器内部错误"
+// @Router /parking/my-spots [get]
 func (c *ParkingController) GetUserSpots(ctx *gin.Context) {
 	userID, exists := ctx.Get("userID")
 	if !exists {
@@ -220,14 +222,13 @@ func (c *ParkingController) GetUserSpots(ctx *gin.Context) {
 		return
 	}
 
-	// 显式类型断言
 	uid, ok := userID.(uint)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "无法从上下文中获取有效的用户 ID"})
 		return
 	}
 
-	spots, err := c.service.GetUserSpots(ctx, uid)
+	spots, err := c.service.GetUserSpots(context.Background(), uid)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
