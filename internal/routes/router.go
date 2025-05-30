@@ -50,7 +50,7 @@ func setupPublicRoutes(router *gin.Engine, deps *RouterDependencies) {
 	public := router.Group("/")
 	{
 		public.POST("/auth/register", deps.AuthController.Register)
-		public.POST("/auth/login", deps.AuthController.Login)
+		public.POST("/auth/login", deps.AuthController.UserLogin)
 		// 其他无需认证的接口...
 	}
 }

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"modules/internal/services"
 	"net/http"
 
@@ -87,9 +86,9 @@ func (c *AuthController) Register(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, MessageResponse{Message: "注册成功"})
 }
 
-// Login 用户登录
+// UserLogin 用户登录
 // @Summary 用户登录
-// @Description 登录并返回 JWT token
+// @Description 用户登录并返回 JWT token
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -98,20 +97,48 @@ func (c *AuthController) Register(ctx *gin.Context) {
 // @Success 200 {object} TokenResponse "登录成功，返回token"
 // @Failure 400 {object} ErrorResponse "请求参数错误"
 // @Failure 401 {object} ErrorResponse "认证失败，用户名或密码错误"
-// @Router /auth/login [post]
-func (c *AuthController) Login(ctx *gin.Context) {
+// @Router /login [post]
+func (c *AuthController) UserLogin(ctx *gin.Context) {
 	var req LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
-	// 打印接收到的用户名和密码，用于调试
-	log.Printf("Received username: %s, password: %s", req.Username, req.Password)
-	token, err := c.service.Login(ctx, req.Username, req.Password)
+
+	token, err := c.service.Login(ctx, req.Username, req.Password, false)
 	if err != nil {
-		log.Printf("Login error: %v", err)
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
 		return
 	}
+
+	ctx.JSON(http.StatusOK, TokenResponse{Token: token})
+}
+
+// AdminLogin 管理员登录
+// @Summary 管理员登录
+// @Description 管理员登录并返回 JWT token
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Example {"username": "admin", "password": "admin123"}
+// @Param input body LoginRequest true "登录信息"
+// @Success 200 {object} TokenResponse "登录成功，返回token"
+// @Failure 400 {object} ErrorResponse "请求参数错误"
+// @Failure 401 {object} ErrorResponse "认证失败，用户名或密码错误"
+// @Failure 403 {object} ErrorResponse "非管理员用户"
+// @Router /admin/login [post]
+func (c *AuthController) AdminLogin(ctx *gin.Context) {
+	var req LoginRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	token, err := c.service.Login(ctx, req.Username, req.Password, true)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, TokenResponse{Token: token})
 }
