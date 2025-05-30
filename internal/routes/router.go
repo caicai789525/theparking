@@ -72,16 +72,16 @@ func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 			fmt.Println("Accessing /lease route")
 			deps.LeaseService.CreateLease(ctx)
 		})
-		// 获取用户停车位信息接口，添加日志确认执行
-		authGroup.GET("/parking/myspots", func(ctx *gin.Context) {
-			fmt.Println("请求到达 /parking/my-spots 路由")
-			// 临时添加日志，确认路由被访问
-			fmt.Println("Accessing /parking/my-spots route")
-			deps.ParkingService.GetUserSpots(ctx)
-		})
 
 		parking := authGroup.Group("/parking")
 		{
+			// 获取用户停车位信息接口，添加日志确认执行
+			parking.GET("/myspots", func(ctx *gin.Context) {
+				fmt.Println("请求到达 /parking/my-spots 路由")
+				// 临时添加日志，确认路由被访问
+				fmt.Println("Accessing /parking/my-spots route")
+				deps.ParkingService.GetUserSpots(ctx)
+			})
 			// 列出所有停车位信息接口
 			parking.GET("/spots", func(ctx *gin.Context) {
 				fmt.Println("Accessing /parking/spots route")
