@@ -46,6 +46,7 @@ definitions:
   controllers.EntryRequest:
     properties:
       license:
+        description: 车牌号
         type: string
     required:
     - license
@@ -96,8 +97,10 @@ definitions:
   controllers.LoginRequest:
     properties:
       password:
+        description: 密码
         type: string
       username:
+        description: 用户名
         type: string
     required:
     - password
@@ -133,29 +136,34 @@ definitions:
   controllers.RecordResponse:
     properties:
       cost:
+        description: 停车费用
         type: number
       entry_time:
+        description: 入场时间
         type: string
       exit_time:
+        description: 出场时间
         type: string
       id:
+        description: 记录ID
         type: integer
       license:
+        description: 车牌号
         type: string
       spot_id:
+        description: 车位ID
         type: integer
     type: object
   controllers.RegisterRequest:
     properties:
       email:
+        description: 邮箱
         type: string
       password:
-        maxLength: 20
-        minLength: 6
+        description: 密码
         type: string
       username:
-        maxLength: 50
-        minLength: 1
+        description: 用户名
         type: string
     required:
     - email
@@ -224,27 +232,37 @@ definitions:
   models.ParkingSpot:
     properties:
       createdAt:
+        description: 创建时间
         type: string
       expiresAt:
-        description: 添加过期时间字段
+        description: 过期时间
         type: string
       hourlyRate:
+        description: 每小时费率
         type: number
       id:
+        description: 车位ID
         type: integer
       license:
+        description: 车牌号
         type: string
       monthlyRate:
+        description: 每月费率
         type: number
       notes:
+        description: 备注
         type: string
       ownerID:
+        description: 业主ID
         type: integer
       status:
-        $ref: '#/definitions/models.ParkingStatus'
+        description: 车位状态
+        type: string
       type:
-        $ref: '#/definitions/models.ParkingType'
+        description: 车位类型
+        type: string
       updatedAt:
+        description: 更新时间
         type: string
     type: object
   models.ParkingStatus:
@@ -560,6 +578,31 @@ paths:
       security:
       - BearerAuth: []
       summary: 车辆出场结算
+      tags:
+      - parking
+  /parking/my-spots:
+    get:
+      description: 查询当前用户名下的所有车位信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回用户的车位列表
+          schema:
+            items:
+              $ref: '#/definitions/models.ParkingSpot'
+            type: array
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询自己的车位
       tags:
       - parking
   /parking/rent:

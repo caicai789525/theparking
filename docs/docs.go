@@ -466,6 +466,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/parking/my-spots": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询当前用户名下的所有车位信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "parking"
+                ],
+                "summary": "查询自己的车位",
+                "responses": {
+                    "200": {
+                        "description": "返回用户的车位列表",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ParkingSpot"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/parking/rent": {
             "post": {
                 "security": [
@@ -802,6 +842,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "license": {
+                    "description": "车牌号",
                     "type": "string"
                 }
             }
@@ -874,9 +915,11 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
+                    "description": "密码",
                     "type": "string"
                 },
                 "username": {
+                    "description": "用户名",
                     "type": "string"
                 }
             }
@@ -926,21 +969,27 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "cost": {
+                    "description": "停车费用",
                     "type": "number"
                 },
                 "entry_time": {
+                    "description": "入场时间",
                     "type": "string"
                 },
                 "exit_time": {
+                    "description": "出场时间",
                     "type": "string"
                 },
                 "id": {
+                    "description": "记录ID",
                     "type": "integer"
                 },
                 "license": {
+                    "description": "车牌号",
                     "type": "string"
                 },
                 "spot_id": {
+                    "description": "车位ID",
                     "type": "integer"
                 }
             }
@@ -954,17 +1003,16 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
+                    "description": "邮箱",
                     "type": "string"
                 },
                 "password": {
-                    "type": "string",
-                    "maxLength": 20,
-                    "minLength": 6
+                    "description": "密码",
+                    "type": "string"
                 },
                 "username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 1
+                    "description": "用户名",
+                    "type": "string"
                 }
             }
         },
@@ -1062,37 +1110,47 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "createdAt": {
+                    "description": "创建时间",
                     "type": "string"
                 },
                 "expiresAt": {
-                    "description": "添加过期时间字段",
+                    "description": "过期时间",
                     "type": "string"
                 },
                 "hourlyRate": {
+                    "description": "每小时费率",
                     "type": "number"
                 },
                 "id": {
+                    "description": "车位ID",
                     "type": "integer"
                 },
                 "license": {
+                    "description": "车牌号",
                     "type": "string"
                 },
                 "monthlyRate": {
+                    "description": "每月费率",
                     "type": "number"
                 },
                 "notes": {
+                    "description": "备注",
                     "type": "string"
                 },
                 "ownerID": {
+                    "description": "业主ID",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.ParkingStatus"
+                    "description": "车位状态",
+                    "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/models.ParkingType"
+                    "description": "车位类型",
+                    "type": "string"
                 },
                 "updatedAt": {
+                    "description": "更新时间",
                     "type": "string"
                 }
             }

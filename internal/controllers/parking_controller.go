@@ -15,6 +15,18 @@ type ParkingController struct {
 	service *services.ParkingService
 }
 
+// CreateParkingSpotRequest 创建车位请求
+type CreateParkingSpotRequest struct {
+	// 每小时费率
+	HourlyRate float64 `json:"hourlyRate" binding:"required"`
+	// 每月费率
+	MonthlyRate float64 `json:"monthlyRate" binding:"required"`
+	// 车位类型
+	Type string `json:"type" binding:"required,oneof=permanent short_term temporary"`
+	// 备注
+	Notes string `json:"notes"`
+}
+
 func NewParkingController(service *services.ParkingService) *ParkingController {
 	return &ParkingController{service: service}
 }
@@ -103,16 +115,24 @@ func (c *ParkingController) Exit(ctx *gin.Context) {
 
 // DTOs和转换方法
 type EntryRequest struct {
+	// 车牌号
 	License string `json:"license" binding:"required"`
 }
 
+// RecordResponse 停车记录响应
 type RecordResponse struct {
-	ID        uint    `json:"id"`
-	SpotID    uint    `json:"spot_id"`
-	License   string  `json:"license"`
-	EntryTime string  `json:"entry_time"`
-	ExitTime  string  `json:"exit_time,omitempty"`
-	Cost      float64 `json:"cost,omitempty"`
+	// 记录ID
+	ID uint `json:"id"`
+	// 车位ID
+	SpotID uint `json:"spot_id"`
+	// 车牌号
+	License string `json:"license"`
+	// 入场时间
+	EntryTime string `json:"entry_time"`
+	// 出场时间
+	ExitTime string `json:"exit_time,omitempty"`
+	// 停车费用
+	Cost float64 `json:"cost"`
 }
 
 func ToRecordResponse(r *models.ParkingRecord) *RecordResponse {
@@ -166,9 +186,10 @@ func (c *ParkingController) CreateSpot(ctx *gin.Context) {
 	}
 
 	spot := &models.ParkingSpot{
-		Type:       req.Type,
+		Type:       string(req.Type),
 		HourlyRate: req.HourlyRate,
-		Status:     models.Idle,
+		// 显式将 ParkingStatus 类型转换为 string 类型
+		Status: string(models.Idle),
 	}
 
 	createdSpot, err := c.service.CreateSpot(ctx, spot)
@@ -178,4 +199,29 @@ func (c *ParkingController) CreateSpot(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, ToParkingSpotResponse(createdSpot))
+}
+
+// @Summary 查询自己的车位
+// @Description 查询当前用户名下的所有车位信息
+// @Tags parking
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} models.ParkingSpot "返回用户的车位列表"
+// @Failure 401 {object} ErrorResponse "未授权访问"
+// @Failure 500 {object} ErrorResponse "服务器内部错误"
+// @Router /parking/my-spots [get]
+func (c *ParkingController) GetUserSpots(ctx *gin.Context) {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "未授权访问"})
+		return
+	}
+
+	spots, err := c.service.GetUserSpots(ctx, userID.(uint))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, spots)
 }

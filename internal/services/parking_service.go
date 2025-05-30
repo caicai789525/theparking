@@ -209,3 +209,8 @@ func (s *ParkingService) CreateSpot(
 	}
 	return spot, nil
 }
+
+// GetUserSpots 查询用户自己的车位
+func (s *ParkingService) GetUserSpots(ctx context.Context, userID uint) ([]*models.ParkingSpot, error) {
+	return s.parkingRepo.GetUserSpots(ctx, userID)
+}

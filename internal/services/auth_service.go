@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goccy/go-json"
-	"log"
 	"modules/config"
 	"modules/internal/models"
 	"modules/internal/repositories"
@@ -48,7 +47,7 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 	return s.userRepo.CreateUser(ctx, user)
 }
 
-// Login 用户登录方法
+// 用户登录
 func (s *AuthService) Login(ctx context.Context, username, password string) (string, error) {
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
@@ -59,18 +58,13 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (str
 		return "", fmt.Errorf("密码验证失败: %w", err)
 	}
 
-	// 打印原始的 user.Roles 数据，方便调试
-	log.Printf("原始 user.Roles 数据: %q", string(user.Roles))
-
 	var roles []models.Role
+	// 检查 user.Roles 是否为空或 nil
 	if len(user.Roles) == 0 {
-		// 处理空角色的情况，返回空切片
+		// 处理角色为空的情况，你可以选择返回空切片或报错
 		roles = []models.Role{}
 	} else {
-		err := json.Unmarshal(user.Roles, &roles)
-		if err != nil {
-			// 打印详细的错误信息
-			log.Printf("反序列化失败，user.Roles: %q, 错误信息: %v", string(user.Roles), err)
+		if err := json.Unmarshal(user.Roles, &roles); err != nil {
 			return "", fmt.Errorf("反序列化用户角色失败: %w", err)
 		}
 	}

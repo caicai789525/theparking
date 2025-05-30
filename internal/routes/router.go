@@ -61,6 +61,7 @@ func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 	{
 		authGroup.POST("/vehicles", deps.VehicleService.BindVehicle)
 		authGroup.POST("/lease", deps.LeaseService.CreateLease)
+		authGroup.GET("/parking/my-spots", deps.ParkingService.GetUserSpots)
 
 		parking := authGroup.Group("/parking")
 		{

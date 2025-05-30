@@ -27,6 +27,7 @@ type ParkingRepository interface {
 	OccupySpot(ctx context.Context, spotID uint, license string, userID *uint) (*models.ParkingRecord, error)
 	ReleaseSpot(ctx context.Context, recordID uint) (*models.ParkingRecord, error)
 	UpdateRecord(ctx context.Context, record *models.ParkingRecord) (*models.ParkingRecord, error)
+	GetUserSpots(ctx context.Context, userID uint) ([]*models.ParkingSpot, error)
 }
 
 type parkingRepo struct {
@@ -35,6 +36,12 @@ type parkingRepo struct {
 
 func NewParkingRepo(db *gorm.DB) ParkingRepository {
 	return &parkingRepo{db: db}
+}
+
+func (r *parkingRepo) GetUserSpots(ctx context.Context, userID uint) ([]*models.ParkingSpot, error) {
+	var spots []*models.ParkingSpot
+	err := r.db.WithContext(ctx).Where("owner_id = ?", userID).Find(&spots).Error
+	return spots, err
 }
 
 func (r *parkingRepo) CreateSpot(ctx context.Context, spot *models.ParkingSpot) error {

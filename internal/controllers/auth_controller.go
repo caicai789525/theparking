@@ -12,14 +12,37 @@ type AuthController struct {
 	service *services.AuthService
 }
 
-type RegisterRequest struct {
-	Username string `json:"username" binding:"required,min=1,max=50"`
-	Password string `json:"password" binding:"required,min=6,max=20"`
-	Email    string `json:"email" binding:"required,email"`
+// RegisterResponse 用户注册响应
+type RegisterResponse struct {
+	// 用户ID
+	ID uint `json:"id"`
+	// 用户名
+	Username string `json:"username"`
+	// 邮箱
+	Email string `json:"email"`
 }
 
-type LoginRequest struct {
+// LoginResponse 用户登录响应
+type LoginResponse struct {
+	// JWT Token
+	Token string `json:"token"`
+}
+
+// RegisterRequest 用户注册请求
+type RegisterRequest struct {
+	// 用户名
 	Username string `json:"username" binding:"required"`
+	// 密码
+	Password string `json:"password" binding:"required"`
+	// 邮箱
+	Email string `json:"email" binding:"required,email"`
+}
+
+// LoginRequest 用户登录请求
+type LoginRequest struct {
+	// 用户名
+	Username string `json:"username" binding:"required"`
+	// 密码
 	Password string `json:"password" binding:"required"`
 }
 

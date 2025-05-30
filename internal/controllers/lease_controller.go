@@ -5,6 +5,7 @@ import (
 	"modules/internal/models"
 	"modules/internal/services"
 	"net/http"
+	"time"
 )
 
 type LeaseController struct {
@@ -67,11 +68,31 @@ type LeaseResponse struct {
 	Status    string  `json:"status"`     // 当前状态
 }
 
+// RentParkingSpotRequest 出租车位请求
+type RentParkingSpotRequest struct {
+	// 车位ID
+	SpotID uint `json:"spotID" binding:"required"`
+	// 出租价格
+	RentPrice float64 `json:"rentPrice" binding:"required"`
+	// 出租天数
+	RentDays int `json:"rentDays" binding:"required"`
+}
+
 // PaymentRequest 支付请求结构（预留接口可用）
 // 用于支付租赁费用
 type PaymentRequest struct {
 	LeaseID uint    `json:"lease_id" binding:"required"`
 	Amount  float64 `json:"amount" binding:"required"`
+}
+
+// CreateLeaseOrderRequest 创建租赁订单请求
+type CreateLeaseOrderRequest struct {
+	// 车位ID
+	SpotID uint `json:"spotID" binding:"required"`
+	// 租赁开始时间
+	StartTime time.Time `json:"startTime" binding:"required"`
+	// 租赁结束时间
+	EndTime time.Time `json:"endTime" binding:"required"`
 }
 
 // PaymentResponse 支付响应结构
