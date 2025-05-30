@@ -60,29 +60,56 @@ func CORSMiddleware() gin.HandlerFunc {
 func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependencies {
 	// Repos
 	userRepo := repositories.NewUserRepo(db)
+	fmt.Printf("UserRepo initialized: %+v\n", userRepo)
 	parkingRepo := repositories.NewParkingRepo(db)
+	fmt.Printf("ParkingRepo initialized: %+v\n", parkingRepo)
 	purchaseRepo := repositories.NewPurchaseRepo(db)
+	fmt.Printf("PurchaseRepo initialized: %+v\n", purchaseRepo)
 	reportRepo := repositories.NewReportRepo(db)
+	fmt.Printf("ReportRepo initialized: %+v\n", reportRepo)
 	leaseRepo := repositories.NewLeaseRepo(db)
+	fmt.Printf("LeaseRepo initialized: %+v\n", leaseRepo)
 	vehicleRepo := repositories.NewVehicleRepo(db)
+	fmt.Printf("VehicleRepo initialized: %+v\n", vehicleRepo)
 
 	// Services
 	authService := services.NewAuthService(userRepo, cfg)
+	fmt.Printf("AuthService initialized: %+v\n", authService)
 	parkingService := services.NewParkingService(parkingRepo, userRepo)
+	fmt.Printf("ParkingService initialized: %+v\n", parkingService)
 	ownerService := services.NewOwnerService(parkingRepo, userRepo, purchaseRepo)
+	fmt.Printf("OwnerService initialized: %+v\n", ownerService)
 	reportService := services.NewReportService(reportRepo, parkingRepo)
+	fmt.Printf("ReportService initialized: %+v\n", reportService)
 	leaseService := services.NewLeaseService(leaseRepo, parkingRepo)
+	fmt.Printf("LeaseService initialized: %+v\n", leaseService)
 	vehicleService := services.NewVehicleService(vehicleRepo, userRepo, parkingRepo, leaseService)
+	fmt.Printf("VehicleService initialized: %+v\n", vehicleService)
 
 	// Controllers
+	authController := controllers.NewAuthController(authService)
+	fmt.Printf("AuthController initialized: %+v\n", authController)
+	parkingController := controllers.NewParkingController(parkingService)
+	fmt.Printf("ParkingController initialized: %+v\n", parkingController)
+	adminController := controllers.NewAdminController(parkingService, reportService)
+	fmt.Printf("AdminController initialized: %+v\n", adminController)
+	leaseController := controllers.NewLeaseController(leaseService)
+	fmt.Printf("LeaseController initialized: %+v\n", leaseController)
+	reportController := controllers.NewReportController(reportService)
+	fmt.Printf("ReportController initialized: %+v\n", reportController)
+	vehicleController := controllers.NewVehicleController(vehicleService)
+	fmt.Printf("VehicleController initialized: %+v\n", vehicleController)
+	ownerController := controllers.NewOwnerController(ownerService)
+	fmt.Printf("OwnerController initialized: %+v\n", ownerController)
+
 	return &ControllerDependencies{
-		AuthController:    controllers.NewAuthController(authService),
-		ParkingController: controllers.NewParkingController(parkingService),
-		AdminController:   controllers.NewAdminController(parkingService, reportService),
-		LeaseController:   controllers.NewLeaseController(leaseService),
-		ReportController:  controllers.NewReportController(reportService),
-		VehicleController: controllers.NewVehicleController(vehicleService),
-		OwnerController:   controllers.NewOwnerController(ownerService),
+		AuthController:    authController,
+		ParkingController: parkingController,
+		AdminController:   adminController,
+		LeaseController:   leaseController,
+		ReportController:  reportController,
+		VehicleController: vehicleController,
+		OwnerController:   ownerController,
 		Cfg:               cfg,
 	}
 }
@@ -173,6 +200,8 @@ func main() {
 	// 打印依赖注入信息，确认 ParkingService 正确注入
 	fmt.Printf("ParkingService: %+v\n", deps.ParkingService)
 	routes.SetupRouter(router, deps)
+	// 打印信息，确认 SetupRouter 调用完成
+	fmt.Println("SetupRouter call completed")
 
 	// 打印所有注册的路由，用于调试
 	for _, route := range router.Routes() {

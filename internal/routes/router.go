@@ -27,10 +27,16 @@ type RouterDependencies struct {
 
 // SetupRouter 配置路由
 func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
+	fmt.Println("Entering SetupRouter")
 	setupSwaggerRoutes(router)
+	fmt.Println("setupSwaggerRoutes completed")
 	setupPublicRoutes(router, deps)
+	fmt.Println("setupPublicRoutes completed")
 	setupAuthRoutes(router, deps)
+	fmt.Println("setupAuthRoutes completed")
 	setupReportRoutes(router, deps)
+	fmt.Println("setupReportRoutes completed")
+	fmt.Println("Exiting SetupRouter")
 }
 
 // setupSwaggerRoutes 配置 Swagger 文档的访问路由
