@@ -6,7 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
-	"log"
+	"gorm.io/gorm"
 	"modules/config"
 	"modules/internal/controllers"
 	"modules/internal/repositories"
@@ -15,48 +15,92 @@ import (
 	"modules/pkg/database"
 	"modules/pkg/logger"
 	"os"
-	"path/filepath"
-
-	"gorm.io/gorm"
 )
 
-type ControllerDependencies struct {
-	AuthController    *controllers.AuthController
-	ParkingController *controllers.ParkingController
-	AdminController   *controllers.AdminController
-	LeaseController   *controllers.LeaseController
-	ReportController  *controllers.ReportController
-	VehicleController *controllers.VehicleController
-	OwnerController   *controllers.OwnerController
-	Cfg               *config.Config
-}
+func main() {
+	// 加载配置
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		// 处理配置加载失败的情况
+		logger.Log.Fatal("加载配置失败", zap.Error(err))
+	}
 
-func CORSMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		fmt.Println("進入了 CORS Middleware, method:", c.Request.Method)
+	// 构建数据库连接字符串
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		cfg.DB.User,
+		cfg.DB.Password,
+		cfg.DB.Host,
+		cfg.DB.Port,
+		cfg.DB.Name,
+	)
+	// 打开数据库连接
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		logger.Log.Fatal("数据库连接失败", zap.Error(err))
+	}
 
-		// 获取 Origin
-		origin := c.GetHeader("Origin")
-		fmt.Println("Request Origin:", origin) // 确保 Origin 正确输出
+	// 执行数据库迁移
+	database.Migrate(db)
 
-		// 只允许特定的域名，这里设定为 http://localhost:63344，您可以根据需要调整
+	// 初始化 UserRepository
+	userRepo := repositories.NewUserRepo(db)
 
-		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	// 初始化 AuthService，传入 UserRepository 和配置
+	authService := services.NewAuthService(userRepo, cfg)
 
-		// 处理 OPTIONS 请求
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
+	// 初始化控制器
+	ctrls := initializeControllers(db, cfg)
 
-		// 继续请求处理
-		c.Next()
+	// 创建 Gin 引擎
+	router := gin.Default()
+
+	// 挂载 CORS 中间件
+	router.Use(CORSMiddleware())
+
+	// 初始化路由依赖，注入 authService
+	deps := &routes.RouterDependencies{
+		AuthService:    authService,
+		AuthController: ctrls.AuthController,
+		ParkingService: ctrls.ParkingController,
+		AdminService:   ctrls.AdminController,
+		LeaseService:   ctrls.LeaseController,
+		ReportService:  ctrls.ReportController,
+		VehicleService: ctrls.VehicleController,
+		OwnerService:   ctrls.OwnerController,
+		Cfg:            ctrls.Cfg,
+	}
+
+	// 设置路由
+	routes.SetupRouter(router, deps)
+
+	// 打印所有注册的路由，用于调试
+	for _, route := range router.Routes() {
+		logger.Log.Info("Registered Route",
+			zap.String("Method", route.Method),
+			zap.String("Path", route.Path),
+			zap.String("Handler", route.Handler))
+		logrus.Infof("Method: %s, Path: %s, Handler: %s", route.Method, route.Path, route.Handler)
+	}
+
+	// 健康检查接口
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	// 获取端口号
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = cfg.Port
+	}
+	logger.Log.Info("服务将启动在端口", zap.String("port", port))
+	logrus.Infof("服务将启动在端口 %s", port)
+	if err := router.Run(":" + port); err != nil {
+		logger.Log.Fatal("服务启动失败", zap.Error(err))
+		logrus.Fatalf("服务启动失败: %v", err)
 	}
 }
 
+// initializeControllers 初始化控制器
 func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependencies {
 	// Repos
 	userRepo := repositories.NewUserRepo(db)
@@ -87,127 +131,30 @@ func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependenc
 	}
 }
 
-// @title 停车系统 API
-// @version 1.0
-// @description 用于管理车位、用户、租赁的接口服务。
-// @termsOfService http://swagger.io/terms/
+// CORSMiddleware CORS 中间件
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
 
-// @contact.name 技术支持
-// @contact.email support@example.com
-
-// @host localhost:8080
-// @BasePath /
-
-func main() {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		// 处理配置加载失败的情况
-		logger.Log.Fatal("加载配置失败", zap.Error(err))
-	}
-
-	// 获取当前工作目录
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("获取当前工作目录失败: %v", err)
-	}
-
-	// 构建日志文件路径
-	logDir := filepath.Join(dir, "log")
-	// 确保日志目录存在
-	if err := os.MkdirAll(logDir, os.ModePerm); err != nil {
-		log.Fatalf("创建日志目录失败: %v", err)
-	}
-	logPath := filepath.Join(logDir, "parking.log")
-	// 设置日志文件路径到配置中
-	cfg.LogFilePath = logPath
-
-	// 使用配置重新初始化日志记录器
-	logger.InitLogger(cfg)
-	defer func() {
-		if logger.Log != nil {
-			logger.Log.Sync()
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
 		}
-	}()
 
-	// 初始化 logrus 日志记录器
-	logrusLogPath := filepath.Join(logDir, "app.log")
-	logrusFile, err := os.OpenFile(logrusLogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		logrus.Fatalf("Failed to open log file: %v", err)
+		c.Next()
 	}
-	defer logrusFile.Close()
-	logrus.SetOutput(logrusFile)
+}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		cfg.DB.User,
-		cfg.DB.Password,
-		cfg.DB.Host,
-		cfg.DB.Port,
-		cfg.DB.Name,
-	)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		logger.Log.Fatal("数据库连接失败", zap.Error(err))
-	}
-
-	database.Migrate(db)
-
-	ctrls := initializeControllers(db, cfg)
-
-	// 只创建一个 Gin 引擎
-	router := gin.Default()
-
-	// 挂载 CORS 中间件
-	router.Use(CORSMiddleware())
-
-	//router.Use(middleware.JWTAuthMiddleware(cfg))
-
-	// 注册路由时传入 router
-	deps := &routes.RouterDependencies{
-		AuthController: ctrls.AuthController,
-		ParkingService: ctrls.ParkingController,
-		AdminService:   ctrls.AdminController,
-		LeaseService:   ctrls.LeaseController,
-		ReportService:  ctrls.ReportController,
-		VehicleService: ctrls.VehicleController,
-		OwnerService:   ctrls.OwnerController,
-		Cfg:            ctrls.Cfg,
-	}
-
-	if deps.ParkingService == nil {
-		fmt.Println("ParkingService in RouterDependencies is nil")
-	} else {
-		fmt.Println("ParkingService in RouterDependencies is not nil")
-	}
-
-	// 打印依赖注入信息，确认 ParkingService 正确注入
-	fmt.Printf("ParkingService: %+v\n", deps.ParkingService)
-	routes.SetupRouter(router, deps)
-	// 打印信息，确认 SetupRouter 调用完成
-	fmt.Println("SetupRouter call completed")
-
-	// 打印所有注册的路由，用于调试
-	for _, route := range router.Routes() {
-		logger.Log.Info("Registered Route",
-			zap.String("Method", route.Method),
-			zap.String("Path", route.Path),
-			zap.String("Handler", route.Handler))
-		logrus.Infof("Method: %s, Path: %s, Handler: %s", route.Method, route.Path, route.Handler)
-	}
-
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
-
-	// 直接从环境变量获取端口号，若未设置则使用默认值 8080
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	logger.Log.Info("服务将启动在端口", zap.String("port", port))
-	logrus.Infof("服务将启动在端口 %s", port)
-	if err := router.Run(":" + port); err != nil {
-		logger.Log.Fatal("服务启动失败", zap.Error(err))
-		logrus.Fatalf("服务启动失败: %v", err)
-	}
+// ControllerDependencies 控制器依赖
+type ControllerDependencies struct {
+	AuthController    *controllers.AuthController
+	ParkingController *controllers.ParkingController
+	AdminController   *controllers.AdminController
+	LeaseController   *controllers.LeaseController
+	ReportController  *controllers.ReportController
+	VehicleController *controllers.VehicleController
+	OwnerController   *controllers.OwnerController
+	Cfg               *config.Config
 }
