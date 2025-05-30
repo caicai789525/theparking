@@ -4,7 +4,9 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/goccy/go-json"
+	"log"
 	"modules/config"
 	"modules/internal/models"
 	"modules/internal/repositories"
@@ -48,34 +50,39 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 
 // 用户登录
 func (s *AuthService) Login(ctx context.Context, username, password string) (string, error) {
+	log.Printf("用户尝试登录，用户名: %s", username)
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return "", errors.New("用户不存在")
+		log.Printf("用户 %s 不存在: %v", username, err)
+		return "", fmt.Errorf("查询用户失败: %w", err)
 	}
 
 	if err := user.CheckPassword(password); err != nil {
-		return "", errors.New("密码错误")
+		log.Printf("用户 %s 密码验证失败", username)
+		return "", fmt.Errorf("密码验证失败: %w", err)
 	}
 
 	var roles []models.Role
 	if err := json.Unmarshal(user.Roles, &roles); err != nil {
-		return "", err
+		log.Printf("用户 %s 反序列化角色失败: %v", username, err)
+		return "", fmt.Errorf("反序列化用户角色失败: %w", err)
 	}
-
+	now := time.Now()
 	// 生成 JWT
 	claims := utils.Claims{
 		UserID:   user.ID,
 		Username: user.Username,
 		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.Cfg.JWT.ExpiresIn)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			NotBefore: jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(now.Add(s.Cfg.JWT.ExpiresIn)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
 			Issuer:    "parking_system",
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	log.Printf("用户 %s 登录成功", username)
 	return token.SignedString([]byte(s.Cfg.JWT.Secret))
 }
 

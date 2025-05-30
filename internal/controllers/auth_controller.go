@@ -86,21 +86,9 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	log.Printf("Received username: %s, password: %s", req.Username, req.Password)
 	token, err := c.service.Login(ctx, req.Username, req.Password)
 	if err != nil {
+		log.Printf("Login error: %v", err)
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
 		return
 	}
-	// 此处重复解析请求体无意义，可移除
-	// if err := ctx.ShouldBindJSON(&req); err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-	// 	return
-	// }
-
-	// 修正：使用 = 赋值已存在的变量
-	token, err = c.service.Login(ctx, req.Username, req.Password)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
-		return
-	}
-
 	ctx.JSON(http.StatusOK, TokenResponse{Token: token})
 }
