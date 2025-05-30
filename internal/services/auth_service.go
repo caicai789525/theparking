@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goccy/go-json"
+	"log"
 	"modules/config"
 	"modules/internal/models"
 	"modules/internal/repositories"
@@ -92,12 +93,14 @@ func (s *AuthService) AdminLogin(ctx context.Context, username, password string)
 	// 从数据库获取用户信息
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
+		log.Printf("查询用户失败: %v", err)
 		return "", fmt.Errorf("查询用户失败: %w", err)
 	}
 
 	// 检查用户是否为管理员
 	var roles []models.Role
 	if err := json.Unmarshal(user.Roles, &roles); err != nil {
+		log.Printf("反序列化用户角色失败: %v, user.Roles: %s", err, string(user.Roles))
 		return "", fmt.Errorf("反序列化用户角色失败: %w", err)
 	}
 
@@ -110,11 +113,13 @@ func (s *AuthService) AdminLogin(ctx context.Context, username, password string)
 	}
 
 	if !isAdmin {
+		log.Printf("该用户不是管理员, username: %s, roles: %v", username, roles)
 		return "", errors.New("该用户不是管理员")
 	}
 
 	// 验证密码
 	if err := user.CheckPassword(password); err != nil {
+		log.Printf("密码验证失败, username: %s", username)
 		return "", fmt.Errorf("密码验证失败: %w", err)
 	}
 
