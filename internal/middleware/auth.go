@@ -40,6 +40,9 @@ func JWTAuthMiddleware(cfg *config.Config, authService *services.AuthService) gi
 		log.Printf("令牌验证成功，用户 ID: %d, 用户名: %s", claims.UserID, claims.Username)
 		// 将 claims 存入上下文，供后续处理使用
 		c.Set("claims", claims)
+		c.Set("userID", claims.UserID)
+		c.Set("username", claims.Username)
+		c.Set("roles", claims.Roles)
 		c.Next()
 	}
 }
