@@ -191,6 +191,7 @@ func (c *ParkingController) CreateSpot(ctx *gin.Context) {
 		Type:       string(req.Type),
 		HourlyRate: req.HourlyRate,
 		// 显式将 ParkingStatus 类型转换为 string 类型
+
 		Status: string(models.Idle),
 	}
 

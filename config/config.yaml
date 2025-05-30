@@ -10,5 +10,7 @@ db:
 
 jwt:
   secret: "parking"
+  jwt:
+    secret_key: "parking"
   expires_in: 24h
   max_age: 86400

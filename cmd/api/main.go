@@ -173,6 +173,13 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	for _, route := range router.Routes() {
+		logger.Log.Info("Registered Route",
+			zap.String("Method", route.Method),
+			zap.String("Path", route.Path),
+			zap.String("Handler", route.Handler))
+	}
+
 	// 直接从环境变量获取端口号，若未设置则使用默认值 8080
 	port := os.Getenv("PORT")
 	if port == "" {

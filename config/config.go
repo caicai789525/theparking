@@ -8,10 +8,12 @@ import (
 )
 
 type Config struct {
-	Env         string         `mapstructure:"env"`
-	Port        string         `mapstructure:"port"`
-	DB          DatabaseConfig `mapstructure:"db"`
-	JWT         JWTConfig      `mapstructure:"jwt"`
+	Env  string         `mapstructure:"env"`
+	Port string         `mapstructure:"port"`
+	DB   DatabaseConfig `mapstructure:"db"`
+	JWT  struct {
+		SecretKey string `yaml:"secret_key"` // 确保有 SecretKey 字段
+	} `yaml:"jwt"`
 	LogFilePath string
 }
 
