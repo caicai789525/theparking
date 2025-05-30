@@ -19,6 +19,7 @@ type AdminController struct {
 }
 
 func NewAdminController(ps *services.ParkingService, rs *services.ReportService) *AdminController {
+	
 	return &AdminController{
 		parkingService: ps,
 		reportService:  rs,

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 	"log"
 	"modules/config"
@@ -12,6 +13,7 @@ import (
 	"modules/internal/repositories"
 	"modules/internal/utils"
 	"regexp"
+	"time"
 )
 
 type AuthService struct {
@@ -19,7 +21,43 @@ type AuthService struct {
 	Cfg      *config.Config
 }
 
+// GenerateToken 生成 JWT 令牌
+func (s *AuthService) GenerateToken(userID uint, role string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": userID,
+		"role":    role,
+		"exp":     time.Now().Add(s.Cfg.JWT.ExpiresIn).Unix(),
+	})
+	// 使用配置中的密钥进行签名
+	return token.SignedString([]byte(s.Cfg.JWT.Secret))
+}
+
+// ValidateToken 验证 JWT 令牌
+func (s *AuthService) ValidateToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		// 使用配置中的密钥进行验证
+		return []byte(s.Cfg.JWT.Secret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+	return nil, jwt.ErrTokenInvalidClaims
+}
+
+// NewAuthService 创建一个新的 AuthService 实例
 func NewAuthService(userRepo repositories.UserRepository, cfg *config.Config) *AuthService {
+	if userRepo == nil {
+		panic("userRepo 不能为 nil")
+	}
+	if cfg == nil {
+		panic("配置不能为 nil")
+	}
 	return &AuthService{
 		userRepo: userRepo,
 		Cfg:      cfg,
