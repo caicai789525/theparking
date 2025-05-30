@@ -14,6 +14,7 @@ import (
 
 type RouterDependencies struct {
 	AuthService    *controllers.AuthController
+	AuthController *controllers.AuthController
 	ParkingService *controllers.ParkingController
 	AdminService   *controllers.AdminController
 	LeaseService   *controllers.LeaseController
@@ -27,22 +28,39 @@ func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
 	// 使用传进来的 router，而不是重新创建 r := gin.Default()
 
 	// Swagger docs 路由
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	setupSwaggerRoutes(router)
 
 	// 公共路由
-	auth := router.Group("/auth")
-	{
-		auth.POST("/register", deps.AuthService.Register)
-		auth.POST("/login", deps.AuthService.Login)
-	}
+	setupPublicRoutes(router, deps)
 
-	// 需要身份验证
+	// 需要身份验证的路由
+	setupAuthRoutes(router, deps)
+
+	// 管理员路由
+	setupAdminRoutes(router, deps)
+
+	// 报表路由
+	setupReportRoutes(router, deps)
+}
+
+func setupSwaggerRoutes(router *gin.Engine) {
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+}
+
+func setupPublicRoutes(router *gin.Engine, deps *RouterDependencies) {
+	public := router.Group("/")
+	{
+		public.POST("/auth/register", deps.AuthController.Register)
+		public.POST("/auth/login", deps.AuthController.Login)
+		// 其他无需认证的接口...
+	}
+}
+
+func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 	authGroup := router.Group("")
-	// 使用依赖注入的配置
 	authGroup.Use(middleware.JWTAuthMiddleware(deps.Cfg))
 	{
 		authGroup.POST("/vehicles", deps.VehicleService.BindVehicle)
-
 		authGroup.POST("/lease", deps.LeaseService.CreateLease)
 
 		parking := authGroup.Group("/parking")
@@ -59,18 +77,20 @@ func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
 			owner.POST("/spots", deps.ParkingService.CreateSpot)
 		}
 	}
+}
 
+func setupAdminRoutes(router *gin.Engine, deps *RouterDependencies) {
 	admin := router.Group("/admin").Use(middleware.RoleCheck(models.Admin))
 	{
 		admin.PUT("/spots/:id/status", deps.AdminService.UpdateSpotStatus)
 		admin.GET("/stats", deps.AdminService.GetSystemStats)
 		admin.POST("/spots", deps.ParkingService.CreateSpot)
 	}
+	router.POST("/admin/login", deps.AuthController.AdminLogin)
+}
 
-	router.POST("/admin/login", deps.AuthService.AdminLogin)
-
+func setupReportRoutes(router *gin.Engine, deps *RouterDependencies) {
 	report := router.Group("/reports")
-	// 使用依赖注入的配置
 	report.Use(middleware.JWTAuthMiddleware(deps.Cfg))
 	{
 		report.GET("/daily", deps.ReportService.GetDailyReport)

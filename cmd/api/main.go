@@ -111,12 +111,6 @@ func main() {
 	}
 	defer logger.Log.Sync()
 
-	cfg, err = config.LoadConfig()
-	if err != nil {
-		logger.Log.Error("加载配置失败", zap.Error(err))
-		return
-	}
-
 	// 使用配置重新初始化日志记录器
 	logger.InitLogger(cfg.Env)
 
@@ -130,12 +124,6 @@ func main() {
 	viper.SetConfigFile(dir + "/config/config.yaml")
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("读取配置文件出错: %v", err)
-	}
-
-	// 读取端口配置
-	port := viper.GetString("port")
-	if port == "" {
-		port = "8080" // 默认端口
 	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
@@ -178,8 +166,10 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	logger.Log.Info("服务将启动在端口", zap.String("port", cfg.Port))
-	if err := router.Run(":" + cfg.Port); err != nil {
+	// 直接设置端口为 8080
+	port := "8080"
+	logger.Log.Info("服务将启动在端口", zap.String("port", port))
+	if err := router.Run(":" + port); err != nil {
 		logger.Log.Fatal("服务启动失败", zap.Error(err))
 	}
 }
