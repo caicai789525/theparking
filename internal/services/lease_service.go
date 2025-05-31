@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"go.uber.org/zap"
+	"log"
 	"modules/internal/models"
 	"modules/internal/repositories"
 	"modules/pkg/logger"
@@ -19,6 +20,7 @@ func (s *LeaseService) CreateLease(
 	period int, // 租赁时长（月数）
 	rate float64, // 租赁费率
 ) (*models.LeaseOrder, error) {
+	log.Printf("Starting to create lease for userID=%d, spotID=%d, period=%d, rate=%f", userID, spotID, period, rate)
 	// 计算总价时使用传入的费率
 	totalPrice := rate * float64(period)
 
@@ -30,6 +32,7 @@ func (s *LeaseService) CreateLease(
 		TotalPrice: totalPrice,
 		Status:     models.LeaseActive,
 	}
+	log.Printf("Lease created successfully for userID=%d, spotID=%d", userID, spotID)
 
 	if err := s.leaseRepo.CreateLease(ctx, lease); err != nil {
 		return nil, fmt.Errorf("创建租赁订单失败: %w", err)

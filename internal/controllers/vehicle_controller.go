@@ -3,6 +3,7 @@ package controllers
 
 import (
 	"github.com/gin-gonic/gin"
+	"log"
 	"modules/internal/models"
 	"modules/internal/services"
 	"net/http"
@@ -67,8 +68,11 @@ func (c *VehicleController) PublishForRent(ctx *gin.Context) {
 	}
 
 	userID := ctx.MustGet("userID").(uint)
+	log.Printf("Received request to publish spot for rent: userID=%d, spotID=%d, rate=%f, period=%d", userID, req.SpotID, req.Rate, req.Days)
+
 	lease, err := c.service.PublishSpotForRent(ctx, userID, req.SpotID, req.Rate, req.Days)
 	if err != nil {
+		log.Printf("Error in PublishSpotForRent: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
