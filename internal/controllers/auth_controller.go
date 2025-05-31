@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"errors"
 	"log"
+	"modules/internal/models"
 	"modules/internal/services"
 	"net/http"
 
@@ -20,6 +22,11 @@ type RegisterResponse struct {
 	Username string `json:"username"`
 	// 邮箱
 	Email string `json:"email"`
+}
+
+// 定义 SuccessResponse 结构体
+type SuccessResponse struct {
+	Message string `json:"message"`
 }
 
 // LoginResponse 用户登录响应
@@ -79,12 +86,21 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.service.Register(ctx, req.Username, req.Password, req.Email); err != nil {
-		ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
-		return
+	err := c.service.Register(ctx, req.Username, req.Password, req.Email)
+	if err != nil {
+		if errors.Is(err, models.ErrUserNotFound) {
+			// 用户不存在，正常注册，不应该返回错误
+			// 继续执行创建用户逻辑，这里代码逻辑已在 service 里处理
+		} else if errors.Is(err, errors.New("用户名已存在")) {
+			ctx.JSON(http.StatusConflict, ErrorResponse{Error: "用户名已存在"})
+			return
+		} else {
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+			return
+		}
 	}
 
-	ctx.JSON(http.StatusCreated, MessageResponse{Message: "注册成功"})
+	ctx.JSON(http.StatusCreated, SuccessResponse{Message: "注册成功"})
 }
 
 // UserLogin 用户登录
