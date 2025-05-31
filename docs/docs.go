@@ -124,6 +124,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/parking/{parkingID}/bind-user": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员根据车位 ID 查询车位绑定的用户信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "查询车位绑定的用户信息",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "车位 ID",
+                        "name": "parkingID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "车位绑定用户信息",
+                        "schema": {
+                            "$ref": "#/definitions/models.ParkingBindUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "车位不存在",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/spots/{id}/status": {
             "put": {
                 "security": [
@@ -202,6 +260,69 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/controllers.SystemStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/unbind-parking": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员根据用户 ID 和车位 ID 解除车位与指定用户的绑定",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理员解除车位与用户的绑定",
+                "parameters": [
+                    {
+                        "description": "解除绑定车位请求体",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UnbindParkingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "解除绑定成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.BindParkingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户或车位不存在",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
                         }
                     },
                     "500": {
@@ -1456,6 +1577,20 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ParkingBindUserResponse": {
+            "type": "object",
+            "properties": {
+                "parking_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "models.ParkingSpot": {
             "type": "object",
             "properties": {
@@ -1530,6 +1665,21 @@ const docTemplate = `{
                 "ShortTerm",
                 "Temporary"
             ]
+        },
+        "models.UnbindParkingRequest": {
+            "type": "object",
+            "required": [
+                "parking_id",
+                "user_id"
+            ],
+            "properties": {
+                "parking_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
         },
         "models.UserInfoResponse": {
             "type": "object",

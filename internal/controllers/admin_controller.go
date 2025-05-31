@@ -254,3 +254,33 @@ func (c *AdminController) UnbindParkingFromUser(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, models.BindParkingResponse{Message: "车位解除绑定成功"})
 }
+
+// GetParkingBindUser 查询车位绑定的用户信息
+// @Summary 查询车位绑定的用户信息
+// @Description 管理员根据车位 ID 查询车位绑定的用户信息
+// @Tags admin
+// @Produce json
+// @Param parkingID path uint true "车位 ID"
+// @Security BearerAuth
+// @Success 200 {object} models.ParkingBindUserResponse "车位绑定用户信息"
+// @Failure 400 {object} ErrorResponse "请求参数错误"
+// @Failure 401 {object} ErrorResponse "未授权访问"
+// @Failure 404 {object} ErrorResponse "车位不存在"
+// @Failure 500 {object} ErrorResponse "服务器内部错误"
+// @Router /admin/parking/{parkingID}/bind-user [get]
+func (c *AdminController) GetParkingBindUser(ctx *gin.Context) {
+	parkingIDStr := ctx.Param("parkingID")
+	parkingID, err := strconv.ParseUint(parkingIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "无效的车位 ID"})
+		return
+	}
+
+	response, err := c.parkingService.GetParkingBindUser(ctx.Request.Context(), uint(parkingID))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
