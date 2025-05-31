@@ -14,6 +14,7 @@ type UserRepository interface {
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
 	// 定义 CreateUser 方法
 	CreateUser(ctx context.Context, user *models.User) error
+	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
 }
 
 type userRepo struct {
@@ -42,4 +43,16 @@ func (r *userRepo) GetUserByUsername(ctx context.Context, username string) (*mod
 	var user models.User
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
 	return &user, err
+}
+
+func (r *userRepo) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {
+	var user models.User
+	err := r.db.WithContext(ctx).First(&user, userID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
 }

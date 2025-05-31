@@ -18,6 +18,15 @@ type AdminController struct {
 	Token string `json:"token"`
 }
 
+// NewAdminController 创建一个新的 AdminController 实例
+// @Summary 创建 AdminController 实例
+// @Description 根据传入的停车服务、报告服务和认证服务实例创建 AdminController 实例
+// @Tags 控制器初始化
+// @Param ps body services.ParkingService true "停车服务实例"
+// @Param rs body services.ReportService true "报告服务实例"
+// @Param as body services.AuthService true "认证服务实例"
+// @Success 200 {object} AdminController "成功创建 AdminController 实例"
+// @Router /internal/create-admin-controller [post]
 // 修改构造函数，添加 authService 参数
 func NewAdminController(ps *services.ParkingService, rs *services.ReportService, as *services.AuthService) *AdminController {
 	return &AdminController{
@@ -154,4 +163,64 @@ func (c *AdminController) AdminLogin(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, AdminLoginResponse{Token: token})
+}
+
+// GetUserInfo 查询用户信息
+// @Summary 查询用户信息
+// @Description 管理员根据用户 ID 查询用户信息
+// @Tags admin
+// @Produce json
+// @Param userID path uint true "用户 ID"
+// @Security BearerAuth
+// @Success 200 {object} models.UserInfoResponse "用户信息"
+// @Failure 400 {object} ErrorResponse "请求参数错误"
+// @Failure 401 {object} ErrorResponse "未授权访问"
+// @Failure 500 {object} ErrorResponse "服务器内部错误"
+// @Router /admin/users/{userID} [get]
+func (c *AdminController) GetUserInfo(ctx *gin.Context) {
+	userIDStr := ctx.Param("userID")
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(400, gin.H{"error": "无效的用户 ID"})
+		return
+	}
+
+	// 从 Gin 上下文获取 context.Context 对象
+	userInfo, err := c.parkingService.GetUserInfo(ctx.Request.Context(), uint(userID))
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, userInfo)
+}
+
+// BindParkingToUser 管理员将车位绑定给用户
+// @Summary 管理员将车位绑定给用户
+// @Description 管理员根据用户 ID 和车位 ID 将车位绑定给指定用户
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param input body models.BindParkingRequest true "绑定车位请求体"
+// @Security BearerAuth
+// @Success 200 {object} models.BindParkingResponse "绑定成功"
+// @Failure 400 {object} ErrorResponse "请求参数错误"
+// @Failure 401 {object} ErrorResponse "未授权访问"
+// @Failure 500 {object} ErrorResponse "服务器内部错误"
+// @Router /admin/bind-parking [post]
+func (c *AdminController) BindParkingToUser(ctx *gin.Context) {
+	var req models.BindParkingRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 从 Gin 上下文获取 context.Context 对象
+	err := c.parkingService.BindParkingToUser(ctx.Request.Context(), req.UserID, req.ParkingID)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, gin.H{"message": "车位绑定成功"})
 }

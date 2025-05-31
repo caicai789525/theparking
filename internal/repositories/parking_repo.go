@@ -28,6 +28,8 @@ type ParkingRepository interface {
 	OccupySpot(ctx context.Context, spotID uint, license string, userID *uint) (*models.ParkingRecord, error)
 	ReleaseSpot(ctx context.Context, recordID uint) (*models.ParkingRecord, error)
 	UpdateRecord(ctx context.Context, record *models.ParkingRecord) (*models.ParkingRecord, error)
+	GetParkingByID(ctx context.Context, parkingID uint) (*models.ParkingRecord, error)
+	UpdateParking(ctx context.Context, parking *models.ParkingRecord) error
 }
 
 type parkingRepo struct {
@@ -243,4 +245,22 @@ func (r *parkingRepo) Transaction(
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		return fn(&parkingRepo{db: tx})
 	})
+}
+
+// 修正方法接收者类型和返回类型
+func (r *parkingRepo) GetParkingByID(ctx context.Context, parkingID uint) (*models.ParkingRecord, error) {
+	var parking models.ParkingRecord
+	err := r.db.WithContext(ctx).First(&parking, parkingID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &parking, nil
+}
+
+// 修正方法接收者类型
+func (r *parkingRepo) UpdateParking(ctx context.Context, parking *models.ParkingRecord) error {
+	return r.db.WithContext(ctx).Save(parking).Error
 }

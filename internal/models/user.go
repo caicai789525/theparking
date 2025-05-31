@@ -2,6 +2,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/goccy/go-json"
 	"golang.org/x/crypto/bcrypt"
 	"modules/internal/utils"
@@ -14,6 +15,12 @@ const (
 	Admin  Role = "admin"
 	Owner  Role = "owner"
 	Renter Role = "renter"
+)
+
+var (
+	ErrUserNotFound        = errors.New("用户不存在")
+	ErrParkingNotFound     = errors.New("车位不存在")
+	ErrParkingAlreadyBound = errors.New("车位已被绑定")
 )
 
 type JSONBytes []byte

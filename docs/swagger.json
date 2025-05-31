@@ -1,18 +1,69 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "用于管理车位、用户、租赁的接口服务。",
-        "title": "停车系统 API",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "技术支持",
-            "email": "support@example.com"
-        },
+        "description": "停车场管理系统的 API 文档",
+        "title": "停车场管理系统 API",
+        "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8080",
-    "basePath": "/",
     "paths": {
+        "/admin/bind-parking": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员根据用户 ID 和车位 ID 将车位绑定给指定用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理员将车位绑定给用户",
+                "parameters": [
+                    {
+                        "description": "绑定车位请求体",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.BindParkingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "绑定成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.BindParkingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/login": {
             "post": {
                 "description": "管理员登录并返回 JWT token",
@@ -154,6 +205,58 @@
                 }
             }
         },
+        "/admin/users/{userID}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员根据用户 ID 查询用户信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "查询用户信息",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户信息",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "注册一个新用户",
@@ -195,6 +298,52 @@
                         "description": "用户名或邮箱已存在",
                         "schema": {
                             "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/create-admin-controller": {
+            "post": {
+                "description": "根据传入的停车服务、报告服务和认证服务实例创建 AdminController 实例",
+                "tags": [
+                    "控制器初始化"
+                ],
+                "summary": "创建 AdminController 实例",
+                "parameters": [
+                    {
+                        "description": "停车服务实例",
+                        "name": "ps",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/services.ParkingService"
+                        }
+                    },
+                    {
+                        "description": "报告服务实例",
+                        "name": "rs",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/services.ReportService"
+                        }
+                    },
+                    {
+                        "description": "认证服务实例",
+                        "name": "as",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/services.AuthService"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功创建 AdminController 实例",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.AdminController"
                         }
                     }
                 }
@@ -769,6 +918,67 @@
         }
     },
     "definitions": {
+        "config.Config": {
+            "type": "object",
+            "properties": {
+                "db": {
+                    "type": "object",
+                    "properties": {
+                        "host": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "password": {
+                            "type": "string"
+                        },
+                        "port": {
+                            "type": "string"
+                        },
+                        "user": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "env": {
+                    "type": "string"
+                },
+                "jwt": {
+                    "$ref": "#/definitions/config.JWTConfig"
+                },
+                "logFilePath": {
+                    "description": "添加 LogFilePath 字段",
+                    "type": "string"
+                },
+                "port": {
+                    "type": "string"
+                }
+            }
+        },
+        "config.JWTConfig": {
+            "type": "object",
+            "properties": {
+                "expiresIn": {
+                    "type": "string"
+                },
+                "maxAge": {
+                    "type": "integer"
+                },
+                "secret": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.AdminController": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "JWT Token",
+                    "type": "string"
+                }
+            }
+        },
         "controllers.AdminLoginRequest": {
             "type": "object",
             "required": [
@@ -1116,6 +1326,29 @@
                 }
             }
         },
+        "models.BindParkingRequest": {
+            "type": "object",
+            "required": [
+                "parking_id",
+                "user_id"
+            ],
+            "properties": {
+                "parking_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.BindParkingResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "models.ParkingSpot": {
             "type": "object",
             "properties": {
@@ -1190,6 +1423,43 @@
                 "ShortTerm",
                 "Temporary"
             ]
+        },
+        "models.UserInfoResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.AuthService": {
+            "type": "object",
+            "properties": {
+                "cfg": {
+                    "$ref": "#/definitions/config.Config"
+                }
+            }
+        },
+        "services.ParkingService": {
+            "type": "object",
+            "properties": {
+                "notes": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.ReportService": {
+            "type": "object"
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

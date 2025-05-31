@@ -19,6 +19,13 @@ import (
 	"path/filepath"
 )
 
+// @title 停车场管理系统 API
+// @version 1.0
+// @description 停车场管理系统的 API 文档
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	cfg, err := config.LoadConfig("config/config.yaml")
 	if err != nil {

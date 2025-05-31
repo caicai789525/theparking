@@ -21,6 +21,19 @@ const (
 	Faulty   ParkingStatus = "faulty"
 )
 
+// BindParkingRequest 管理员绑定车位给用户的请求结构体
+type BindParkingRequest struct {
+	UserID    uint `json:"user_id" binding:"required"`
+	ParkingID uint `json:"parking_id" binding:"required"`
+}
+
+// UserInfoResponse 用户信息响应结构体
+type UserInfoResponse struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+	// 可根据实际需求添加更多字段
+}
+
 // ParkingSpot 车位信息
 type ParkingSpot struct {
 	// 创建时间
@@ -67,4 +80,9 @@ type ParkingRecord struct {
 	IsCompleted bool `gorm:"default:false"`
 	// 车辆ID
 	VehicleID *uint // 添加关联车辆ID
+}
+
+// BindParkingResponse 绑定车位响应结构体
+type BindParkingResponse struct {
+	Message string `json:"message"`
 }

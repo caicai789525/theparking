@@ -223,3 +223,52 @@ func (s *ParkingService) CreateSpot(
 func (s *ParkingService) GetUserSpots(ctx context.Context, userID uint) ([]*models.ParkingSpot, error) {
 	return s.parkingRepo.GetUserSpots(ctx, userID)
 }
+
+// BindParkingToUser 管理员将车位绑定给用户
+func (s *ParkingService) BindParkingToUser(ctx context.Context, userID, parkingID uint) error {
+	// 检查用户是否存在
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return models.ErrUserNotFound
+	}
+
+	// 检查车位是否存在
+	parking, err := s.parkingRepo.GetParkingByID(ctx, parkingID)
+	if err != nil {
+		return err
+	}
+	if parking == nil {
+		return models.ErrParkingNotFound
+	}
+
+	// 检查车位是否已被绑定
+	// 先判断 parking.UserID 是否为 nil，不为 nil 时再解引用比较
+	if parking.UserID != nil && *parking.UserID != 0 {
+		return models.ErrParkingAlreadyBound
+	}
+
+	// 绑定车位给用户
+	// 将 uint 类型的 userID 转换为 *uint 类型
+	userIDPtr := &userID
+	parking.UserID = userIDPtr
+	return s.parkingRepo.UpdateParking(ctx, parking)
+}
+
+// GetUserInfo 根据用户 ID 查询用户信息
+func (s *ParkingService) GetUserInfo(ctx context.Context, userID uint) (*models.UserInfoResponse, error) {
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, models.ErrUserNotFound
+	}
+
+	return &models.UserInfoResponse{
+		ID:       user.ID,
+		Username: user.Username, // 假设 User 结构体有 Username 字段
+	}, nil
+}

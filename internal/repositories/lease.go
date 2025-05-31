@@ -3,7 +3,6 @@ package repositories
 
 import (
 	"context"
-	"errors"
 	"modules/internal/models"
 	"time"
 
@@ -33,9 +32,10 @@ func (r *leaseRepo) CreateLease(ctx context.Context, lease *models.LeaseOrder) e
 			return err
 		}
 
-		if spot.Type != string(models.ShortTerm) {
-			return errors.New("车位类型不是短租类型")
-		}
+		// 注释掉类型检查逻辑
+		// if spot.Type != string(models.ShortTerm) {
+		//     return errors.New("车位类型不是短租类型")
+		// }
 
 		// 更新车位到期时间
 		if err := tx.Model(&spot).Update("expires_at", lease.EndDate).Error; err != nil {
