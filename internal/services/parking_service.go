@@ -299,7 +299,7 @@ func (s *ParkingService) GetParkingBindUser(ctx context.Context, parkingID uint)
 			} else {
 				return nil, err
 			}
-		} else {
+		} else if user != nil { // 新增检查 user 是否为 nil
 			username = user.Username
 		}
 	}
