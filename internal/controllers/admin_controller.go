@@ -18,11 +18,12 @@ type AdminController struct {
 	Token string `json:"token"`
 }
 
-func NewAdminController(ps *services.ParkingService, rs *services.ReportService) *AdminController {
-	
+// 修改构造函数，添加 authService 参数
+func NewAdminController(ps *services.ParkingService, rs *services.ReportService, as *services.AuthService) *AdminController {
 	return &AdminController{
 		parkingService: ps,
 		reportService:  rs,
+		authService:    as, // 初始化 authService
 	}
 }
 

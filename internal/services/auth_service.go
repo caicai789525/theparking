@@ -131,6 +131,9 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 
 // Login 用户/管理员通用登录方法
 func (s *AuthService) Login(ctx context.Context, username, password string, checkAdmin bool) (string, error) {
+	if s.userRepo == nil {
+		return "", errors.New("userRepo is not initialized")
+	}
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -130,7 +130,7 @@ func main() {
 // initializeControllers 初始化控制器
 func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependencies {
 	// Repos
-	userRepo := repositories.NewUserRepo(db)
+	userRepo := repositories.NewUserRepo(db) // 初始化 userRepo
 	parkingRepo := repositories.NewParkingRepo(db)
 	purchaseRepo := repositories.NewPurchaseRepo(db)
 	reportRepo := repositories.NewReportRepo(db)
@@ -138,18 +138,19 @@ func initializeControllers(db *gorm.DB, cfg *config.Config) *ControllerDependenc
 	vehicleRepo := repositories.NewVehicleRepo(db)
 
 	// Services
-	authService := services.NewAuthService(userRepo, cfg)
-	parkingService := services.NewParkingService(parkingRepo, userRepo)
+	authService := services.NewAuthService(userRepo, cfg)               // 初始化 AuthService
+	parkingService := services.NewParkingService(parkingRepo, userRepo) // 初始化 parkingService
 	ownerService := services.NewOwnerService(parkingRepo, userRepo, purchaseRepo)
-	reportService := services.NewReportService(reportRepo, parkingRepo)
+	reportService := services.NewReportService(reportRepo, parkingRepo) // 初始化 reportService
 	leaseService := services.NewLeaseService(leaseRepo, parkingRepo)
 	vehicleService := services.NewVehicleService(vehicleRepo, userRepo, parkingRepo, leaseService)
 
 	// Controllers
+	adminController := controllers.NewAdminController(parkingService, reportService, authService) // 初始化 AdminController
 	return &ControllerDependencies{
 		AuthController:    controllers.NewAuthController(authService),
 		ParkingController: controllers.NewParkingController(parkingService),
-		AdminController:   controllers.NewAdminController(parkingService, reportService),
+		AdminController:   adminController,
 		LeaseController:   controllers.NewLeaseController(leaseService),
 		ReportController:  controllers.NewReportController(reportService),
 		VehicleController: controllers.NewVehicleController(vehicleService),
