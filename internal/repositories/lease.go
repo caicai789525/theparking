@@ -9,11 +9,16 @@ import (
 	"gorm.io/gorm"
 )
 
+type LeaseTx interface {
+	CreateLease(ctx context.Context, lease *models.LeaseOrder) error
+}
+
 type LeaseRepository interface {
 	CreateLease(ctx context.Context, lease *models.LeaseOrder) error
 	GetUserLeases(ctx context.Context, userID uint, status models.LeaseStatus) ([]*models.LeaseOrder, error)
 	UpdateLeaseStatus(ctx context.Context, leaseID uint, status models.LeaseStatus) error
 	GetExpiringLeases(ctx context.Context, before time.Time) ([]*models.LeaseOrder, error)
+	Transaction(ctx context.Context, fn func(tx LeaseTx) error) error
 }
 
 type leaseRepo struct {
@@ -31,11 +36,6 @@ func (r *leaseRepo) CreateLease(ctx context.Context, lease *models.LeaseOrder) e
 		if err := tx.First(&spot, lease.SpotID).Error; err != nil {
 			return err
 		}
-
-		// 注释掉类型检查逻辑
-		// if spot.Type != string(models.ShortTerm) {
-		//     return errors.New("车位类型不是短租类型")
-		// }
 
 		// 更新车位到期时间
 		if err := tx.Model(&spot).Update("expires_at", lease.EndDate).Error; err != nil {
@@ -70,4 +70,22 @@ func (r *leaseRepo) GetExpiringLeases(ctx context.Context, before time.Time) ([]
 		Where("end_date < ? AND status = ?", before, models.LeaseActive).
 		Find(&leases).Error
 	return leases, err
+}
+
+// Transaction 实现事务方法
+func (r *leaseRepo) Transaction(ctx context.Context, fn func(tx LeaseTx) error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txRepo := &leaseTxRepo{db: tx}
+		return fn(txRepo)
+	})
+}
+
+// leaseTxRepo 实现 LeaseTx 接口
+type leaseTxRepo struct {
+	db *gorm.DB
+}
+
+// CreateLease 实现 LeaseTx 接口的 CreateLease 方法
+func (t *leaseTxRepo) CreateLease(ctx context.Context, lease *models.LeaseOrder) error {
+	return t.db.WithContext(ctx).Create(lease).Error
 }

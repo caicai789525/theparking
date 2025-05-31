@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"go.uber.org/zap"
-	"log"
 	"modules/internal/models"
 	"modules/internal/repositories"
 	"modules/pkg/logger"
@@ -20,23 +19,85 @@ func (s *LeaseService) CreateLease(
 	period int, // 租赁时长（月数）
 	rate float64, // 租赁费率
 ) (*models.LeaseOrder, error) {
-	log.Printf("Starting to create lease for userID=%d, spotID=%d, period=%d, rate=%f", userID, spotID, period, rate)
+	// 参数校验
+	if period <= 0 {
+		err := fmt.Errorf("租赁时长必须为正整数")
+		logger.Log.Error("创建租赁订单失败",
+			zap.Uint("userID", userID),
+			zap.Uint("spotID", spotID),
+			zap.Int("period", period),
+			zap.Error(err))
+		return nil, err
+	}
+
+	if rate <= 0 {
+		err := fmt.Errorf("租赁费率必须为正数")
+		logger.Log.Error("创建租赁订单失败",
+			zap.Uint("userID", userID),
+			zap.Uint("spotID", spotID),
+			zap.Float64("rate", rate),
+			zap.Error(err))
+		return nil, err
+	}
+
+	logger.Log.Info("Starting to create lease",
+		zap.Uint("userID", userID),
+		zap.Uint("spotID", spotID),
+		zap.Int("period", period),
+		zap.Float64("rate", rate))
+
 	// 计算总价时使用传入的费率
 	totalPrice := rate * float64(period)
+
+	startDate := time.Now()
+	endDate := startDate.AddDate(0, period, 0)
+
+	// 检查结束时间是否早于开始时间
+	if endDate.Before(startDate) {
+		err := fmt.Errorf("结束时间早于开始时间")
+		logger.Log.Error("创建租赁订单失败",
+			zap.Uint("userID", userID),
+			zap.Uint("spotID", spotID),
+			zap.Time("startDate", startDate),
+			zap.Time("endDate", endDate),
+			zap.Error(err))
+		return nil, err
+	}
 
 	lease := &models.LeaseOrder{
 		UserID:     userID,
 		SpotID:     spotID,
-		StartDate:  time.Now(),
-		EndDate:    time.Now().AddDate(0, period, 0),
+		StartDate:  startDate,
+		EndDate:    endDate,
 		TotalPrice: totalPrice,
 		Status:     models.LeaseActive,
 	}
-	log.Printf("Lease created successfully for userID=%d, spotID=%d", userID, spotID)
 
-	if err := s.leaseRepo.CreateLease(ctx, lease); err != nil {
-		return nil, fmt.Errorf("创建租赁订单失败: %w", err)
+	// 使用事务创建租赁订单和更新车位信息
+	err := s.leaseRepo.Transaction(ctx, func(tx repositories.LeaseTx) error {
+		if err := tx.CreateLease(ctx, lease); err != nil {
+			return fmt.Errorf("创建租赁订单失败: %w", err)
+		}
+
+		// 更新车位到期时间
+		if err := s.parkingRepo.UpdateSpotExpiry(ctx, spotID, &endDate); err != nil {
+			return fmt.Errorf("更新车位到期时间失败: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		logger.Log.Error("创建租赁订单失败",
+			zap.Uint("userID", userID),
+			zap.Uint("spotID", spotID),
+			zap.Error(err))
+		return nil, err
 	}
+
+	logger.Log.Info("Lease created successfully",
+		zap.Uint("userID", userID),
+		zap.Uint("spotID", spotID))
 
 	return lease, nil
 }

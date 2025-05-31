@@ -126,6 +126,7 @@ func setupAdminRoutes(router *gin.Engine, deps *RouterDependencies) {
 		adminGroup.PUT("/spots/:id/status", deps.AdminService.UpdateSpotStatus)
 		// 获取系统统计数据接口
 		adminGroup.GET("/stats", deps.AdminService.GetSystemStats)
+		adminGroup.POST("/bind-parking", deps.AdminService.BindParkingToUser)
 	}
 }
 
