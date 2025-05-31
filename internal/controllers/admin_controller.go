@@ -187,11 +187,10 @@ func (c *AdminController) GetUserInfo(ctx *gin.Context) {
 
 	userInfo, err := c.parkingService.GetUserInfo(ctx.Request.Context(), username)
 	if err != nil {
-		switch {
-		case errors.Is(err, models.ErrUserNotFound):
-			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
-		default:
-			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		if errors.Is(err, models.ErrUserNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "用户不存在"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "查询用户信息失败"})
 		}
 		return
 	}

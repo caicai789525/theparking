@@ -264,7 +264,7 @@ func (s *ParkingService) BindParkingToUser(ctx context.Context, userID, parkingI
 func (s *ParkingService) GetUserInfo(ctx context.Context, username string) (*models.AdminUserInfoResponse, error) {
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, models.ErrUserNotFound) {
 			return nil, models.ErrUserNotFound
 		}
 		return nil, fmt.Errorf("查询用户信息失败: %w", err)

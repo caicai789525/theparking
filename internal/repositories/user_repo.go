@@ -41,8 +41,16 @@ func NewUserRepo(db *gorm.DB) UserRepository {
 
 func (r *userRepo) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
+	// 打印查询条件，方便调试
+	println("查询用户名:", username)
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
-	return &user, err
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, models.ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *userRepo) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {
