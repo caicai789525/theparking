@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"go.uber.org/zap"
 	"strings"
 
 	"gorm.io/gorm"
@@ -40,18 +41,30 @@ func NewUserRepo(db *gorm.DB) UserRepository {
 	return &userRepo{db: db}
 }
 
+// GetUserByUsername 根据用户名查询用户信息
 func (r *userRepo) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	// 输入验证，检查用户名是否为空
+	if strings.TrimSpace(username) == "" {
+		zap.L().Error("查询用户时，用户名为空")
+		return nil, errors.New("用户名不能为空")
+	}
+
 	var user models.User
-	// 去除前后空格
-	username = strings.TrimSpace(username)
-	println("查询用户名:", username)
-	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
+	// 去除用户名前后空格并转换为小写，进行不区分大小写的查询
+	lowerUsername := strings.ToLower(strings.TrimSpace(username))
+	zap.L().Info("开始查询用户", zap.String("username", lowerUsername))
+
+	err := r.db.WithContext(ctx).Where("LOWER(username) = ?", lowerUsername).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			zap.L().Info("未找到用户", zap.String("username", lowerUsername))
 			return nil, models.ErrUserNotFound
 		}
+		zap.L().Error("查询用户时发生数据库错误", zap.String("username", lowerUsername), zap.Error(err))
 		return nil, err
 	}
+
+	zap.L().Info("成功找到用户", zap.String("username", user.Username))
 	return &user, nil
 }
 
