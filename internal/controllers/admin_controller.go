@@ -248,8 +248,10 @@ func (c *AdminController) UnbindParkingFromUser(ctx *gin.Context) {
 
 	err := c.parkingService.UnbindParkingFromUser(ctx.Request.Context(), req.UserID, req.ParkingID)
 	if err != nil {
-		if errors.Is(err, models.ErrUserNotFound) || errors.Is(err, models.ErrParkingNotFound) {
-			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+		if err == models.ErrParkingNotFound {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "车位不存在"})
+		} else if err == models.ErrParkingNotBoundToUser {
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "车位未绑定给指定用户"})
 		} else {
 			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		}

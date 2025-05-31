@@ -51,7 +51,7 @@ type ParkingSpot struct {
 	// 备注
 	Notes string `json:"notes"`
 	// 业主ID
-	OwnerID uint `json:"ownerID"`
+	OwnerID uint `json:"ownerID"gorm:"column:user_id"`
 	// 车位状态
 	Status string `json:"status" gorm:"type:enum('idle', 'occupied', 'faulty')"`
 	// 车位类型

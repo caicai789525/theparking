@@ -31,6 +31,7 @@ type ParkingRepository interface {
 	GetParkingByID(ctx context.Context, parkingID uint) (*models.ParkingRecord, error)
 	UpdateParking(ctx context.Context, parking *models.ParkingRecord) error
 	GetParkingSpotByID(ctx context.Context, parkingID uint) (*models.ParkingSpot, error)
+	UnbindParkingFromUser(ctx context.Context, id uint, id2 uint) error
 }
 
 type parkingRepo struct {
@@ -278,4 +279,21 @@ func (r *parkingRepo) GetParkingByID(ctx context.Context, parkingID uint) (*mode
 // 修正方法接收者类型
 func (r *parkingRepo) UpdateParking(ctx context.Context, parking *models.ParkingRecord) error {
 	return r.db.WithContext(ctx).Save(parking).Error
+}
+
+func (r *parkingRepo) UnbindParkingFromUser(ctx context.Context, userID, parkingID uint) error {
+	// 检查车位是否存在
+	parkingSpot, err := r.GetParkingSpotByID(ctx, parkingID)
+	if err != nil {
+		return err
+	}
+
+	// 检查车位是否绑定给指定用户
+	if parkingSpot.OwnerID != userID {
+		return models.ErrParkingNotBoundToUser
+	}
+
+	// 解除绑定
+	parkingSpot.OwnerID = 0
+	return r.db.WithContext(ctx).Save(parkingSpot).Error
 }
