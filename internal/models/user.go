@@ -28,6 +28,13 @@ func (r JSONBytes) Unmarshal(dst *[]Role) error {
 	return json.Unmarshal(r, dst)
 }
 
+type AdminUserInfoResponse struct {
+	ID           uint           `json:"id"`
+	Email        string         `json:"email"`
+	Password     string         `json:"password"`
+	ParkingSpots []*ParkingSpot `json:"parking_spots"`
+}
+
 type User struct {
 	ID        uint      `gorm:"primaryKey"`
 	Username  string    `gorm:"uniqueIndex;size:50;not null"`

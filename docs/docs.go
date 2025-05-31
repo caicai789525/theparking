@@ -334,14 +334,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/users/{userID}": {
+        "/admin/users/{username}": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "管理员根据用户 ID 查询用户信息",
+                "description": "管理员根据用户名查询用户 ID、注册邮箱、用户的停车位和密码",
                 "produces": [
                     "application/json"
                 ],
@@ -351,9 +351,9 @@ const docTemplate = `{
                 "summary": "查询用户信息",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "userID",
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
                         "in": "path",
                         "required": true
                     }
@@ -362,7 +362,7 @@ const docTemplate = `{
                     "200": {
                         "description": "用户信息",
                         "schema": {
-                            "$ref": "#/definitions/models.UserInfoResponse"
+                            "$ref": "#/definitions/models.AdminUserInfoResponse"
                         }
                     },
                     "400": {
@@ -373,6 +373,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
                         "schema": {
                             "$ref": "#/definitions/controllers.ErrorResponse"
                         }
@@ -1554,6 +1560,26 @@ const docTemplate = `{
                 }
             }
         },
+        "models.AdminUserInfoResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "parking_spots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ParkingSpot"
+                    }
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "models.BindParkingRequest": {
             "type": "object",
             "required": [
@@ -1678,17 +1704,6 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
-                }
-            }
-        },
-        "models.UserInfoResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },

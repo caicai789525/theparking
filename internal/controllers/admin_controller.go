@@ -167,32 +167,44 @@ func (c *AdminController) AdminLogin(ctx *gin.Context) {
 
 // GetUserInfo 查询用户信息
 // @Summary 查询用户信息
-// @Description 管理员根据用户 ID 查询用户信息
+// @Description 管理员根据用户名查询用户 ID、注册邮箱、用户的停车位和密码
 // @Tags admin
 // @Produce json
-// @Param userID path uint true "用户 ID"
+// @Param username path string true "用户名"
 // @Security BearerAuth
-// @Success 200 {object} models.UserInfoResponse "用户信息"
+// @Success 200 {object} models.AdminUserInfoResponse "用户信息"
 // @Failure 400 {object} ErrorResponse "请求参数错误"
 // @Failure 401 {object} ErrorResponse "未授权访问"
+// @Failure 404 {object} ErrorResponse "用户不存在"
 // @Failure 500 {object} ErrorResponse "服务器内部错误"
-// @Router /admin/users/{userID} [get]
+// @Router /admin/users/{username} [get]
 func (c *AdminController) GetUserInfo(ctx *gin.Context) {
-	userIDStr := ctx.Param("userID")
-	userID, err := strconv.ParseUint(userIDStr, 10, 64)
-	if err != nil {
-		ctx.JSON(400, gin.H{"error": "无效的用户 ID"})
+	username := ctx.Param("username")
+	if username == "" {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "无效的用户名"})
 		return
 	}
 
-	// 从 Gin 上下文获取 context.Context 对象
-	userInfo, err := c.parkingService.GetUserInfo(ctx.Request.Context(), uint(userID))
+	userInfo, err := c.parkingService.GetUserInfo(ctx.Request.Context(), username)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": err.Error()})
+		switch {
+		case errors.Is(err, models.ErrUserNotFound):
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+		default:
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		}
 		return
 	}
 
-	ctx.JSON(200, userInfo)
+	ctx.JSON(http.StatusOK, userInfo)
+}
+
+// AdminUserInfoResponse 管理员查询用户信息响应结构
+type AdminUserInfoResponse struct {
+	ID           uint                  `json:"id"`
+	Email        string                `json:"email"`
+	Password     string                `json:"password"`
+	ParkingSpots []*models.ParkingSpot `json:"parking_spots"`
 }
 
 // BindParkingToUser 管理员将车位绑定给用户

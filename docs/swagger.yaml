@@ -275,6 +275,19 @@ definitions:
       model:
         type: string
     type: object
+  models.AdminUserInfoResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      parking_spots:
+        items:
+          $ref: '#/definitions/models.ParkingSpot'
+        type: array
+      password:
+        type: string
+    type: object
   models.BindParkingRequest:
     properties:
       parking_id:
@@ -364,13 +377,6 @@ definitions:
     required:
     - parking_id
     - user_id
-    type: object
-  models.UserInfoResponse:
-    properties:
-      id:
-        type: integer
-      username:
-        type: string
     type: object
   services.AuthService:
     properties:
@@ -593,28 +599,32 @@ paths:
       summary: 管理员解除车位与用户的绑定
       tags:
       - admin
-  /admin/users/{userID}:
+  /admin/users/{username}:
     get:
-      description: 管理员根据用户 ID 查询用户信息
+      description: 管理员根据用户名查询用户 ID、注册邮箱、用户的停车位和密码
       parameters:
-      - description: 用户 ID
+      - description: 用户名
         in: path
-        name: userID
+        name: username
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: 用户信息
           schema:
-            $ref: '#/definitions/models.UserInfoResponse'
+            $ref: '#/definitions/models.AdminUserInfoResponse'
         "400":
           description: 请求参数错误
           schema:
             $ref: '#/definitions/controllers.ErrorResponse'
         "401":
           description: 未授权访问
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+        "404":
+          description: 用户不存在
           schema:
             $ref: '#/definitions/controllers.ErrorResponse'
         "500":

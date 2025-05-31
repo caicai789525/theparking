@@ -260,19 +260,26 @@ func (s *ParkingService) BindParkingToUser(ctx context.Context, userID, parkingI
 	return s.parkingRepo.UpdateParkingSpot(ctx, parking)
 }
 
-// GetUserInfo 根据用户 ID 查询用户信息
-func (s *ParkingService) GetUserInfo(ctx context.Context, userID uint) (*models.UserInfoResponse, error) {
-	user, err := s.userRepo.GetUserByID(ctx, userID)
+// GetUserInfo 根据用户名查询用户信息
+func (s *ParkingService) GetUserInfo(ctx context.Context, username string) (*models.AdminUserInfoResponse, error) {
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, models.ErrUserNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, models.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("查询用户信息失败: %w", err)
 	}
 
-	return &models.UserInfoResponse{
-		ID:       user.ID,
-		Username: user.Username, // 假设 User 结构体有 Username 字段
+	spots, err := s.parkingRepo.GetUserSpots(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("查询用户车位信息失败: %w", err)
+	}
+
+	return &models.AdminUserInfoResponse{
+		ID:           user.ID,
+		Email:        user.Email,
+		Password:     user.Password,
+		ParkingSpots: spots,
 	}, nil
 }
 
