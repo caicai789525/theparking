@@ -128,7 +128,7 @@ func setupAdminRoutes(router *gin.Engine, deps *RouterDependencies) {
 		adminGroup.GET("/stats", deps.AdminService.GetSystemStats)
 		adminGroup.POST("/bind-parking", deps.AdminService.BindParkingToUser)
 		// 解除车位与用户绑定接口
-		adminGroup.DELETE("/unbind-parking/:parkingID", deps.AdminService.UnbindParkingFromUser)
+		adminGroup.POST("/unbind-parking", deps.AdminService.UnbindParkingFromUser)
 		adminGroup.GET("/users/:userID", deps.AdminService.GetUserInfo)
 		// 查询车位绑定用户信息接口
 		adminGroup.GET("parking/:parkingID/bind-user", deps.AdminService.GetParkingBindUser)

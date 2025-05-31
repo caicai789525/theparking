@@ -315,20 +315,23 @@ func (s *ParkingService) GetParkingBindUser(ctx context.Context, parkingID uint)
 	}
 
 	var username string
-	// 不再使用指针操作
 	if spot.OwnerID != 0 {
 		user, err := s.userRepo.GetUserByID(ctx, spot.OwnerID)
 		if err != nil {
-			return nil, err
-		}
-		if user != nil {
+			if err == models.ErrUserNotFound {
+				// 处理用户不存在的情况
+				username = ""
+			} else {
+				return nil, err
+			}
+		} else {
 			username = user.Username
 		}
 	}
 
 	return &models.ParkingBindUserResponse{
 		ParkingID: parkingID,
-		UserID:    spot.OwnerID, // 直接赋值 uint 类型
+		UserID:    spot.OwnerID,
 		Username:  username,
 	}, nil
 }

@@ -248,7 +248,11 @@ func (c *AdminController) UnbindParkingFromUser(ctx *gin.Context) {
 
 	err := c.parkingService.UnbindParkingFromUser(ctx.Request.Context(), req.UserID, req.ParkingID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		if errors.Is(err, models.ErrUserNotFound) || errors.Is(err, models.ErrParkingNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		}
 		return
 	}
 
@@ -280,6 +284,8 @@ func (c *AdminController) GetParkingBindUser(ctx *gin.Context) {
 	if err != nil {
 		if err == models.ErrParkingNotFound {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "车位不存在"})
+		} else if err == models.ErrUserNotFound {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "用户不存在"})
 		} else {
 			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		}
