@@ -52,6 +52,14 @@ func (s *AuthService) Register(ctx context.Context, username, password, email st
 		return errors.New("邮箱格式不正确")
 	}
 
+	exists, err := s.userRepo.CheckUserExists(ctx, username, email)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("用户名或邮箱已存在")
+	}
+
 	// 检查用户名是否已存在
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {

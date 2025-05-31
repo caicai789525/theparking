@@ -17,6 +17,7 @@ type UserRepository interface {
 	// 定义 CreateUser 方法
 	CreateUser(ctx context.Context, user *models.User) error
 	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
+	CheckUserExists(ctx context.Context, username, email string) (bool, error)
 }
 
 type userRepo struct {
@@ -78,4 +79,15 @@ func (r *userRepo) GetUserByID(ctx context.Context, userID uint) (*models.User, 
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *userRepo) CheckUserExists(ctx context.Context, username, email string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&models.User{}).
+		Where("username = ? OR email = ?", username, email).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
