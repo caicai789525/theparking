@@ -18,9 +18,8 @@ const (
 )
 
 var (
-	ErrUserNotFound        = errors.New("用户不存在")
-	ErrParkingNotFound     = errors.New("车位不存在")
-	ErrParkingAlreadyBound = errors.New("车位已被绑定")
+	ErrUserNotFound    = errors.New("用户不存在")
+	ErrParkingNotFound = errors.New("车位不存在")
 )
 
 type JSONBytes []byte

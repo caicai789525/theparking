@@ -32,10 +32,15 @@ type ParkingRepository interface {
 	UpdateParking(ctx context.Context, parking *models.ParkingRecord) error
 	GetParkingSpotByID(ctx context.Context, parkingID uint) (*models.ParkingSpot, error)
 	UnbindParkingFromUser(ctx context.Context, id uint, id2 uint) error
+	UpdateParkingSpot(ctx context.Context, parking *models.ParkingSpot) error
 }
 
 type parkingRepo struct {
 	db *gorm.DB
+}
+
+func (r *parkingRepo) UpdateParkingSpot(ctx context.Context, spot *models.ParkingSpot) error {
+	return r.db.WithContext(ctx).Save(spot).Error
 }
 
 func NewParkingRepo(db *gorm.DB) ParkingRepository {
@@ -175,19 +180,6 @@ func (r *parkingRepo) CreateRecord(ctx context.Context, record *models.ParkingRe
 	return r.db.WithContext(ctx).Create(record).Error
 }
 
-// GetParkingSpotByID 根据车位 ID 获取车位信息
-func (r *parkingRepo) GetParkingSpotByID(ctx context.Context, parkingID uint) (*models.ParkingSpot, error) {
-	var parkingSpot models.ParkingSpot
-	err := r.db.WithContext(ctx).First(&parkingSpot, parkingID).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, models.ErrParkingNotFound
-		}
-		return nil, err
-	}
-	return &parkingSpot, nil
-}
-
 func (r *parkingRepo) GetOngoingRecord(ctx context.Context, license string) (*models.ParkingRecord, error) {
 	var record models.ParkingRecord
 	err := r.db.WithContext(ctx).
@@ -296,4 +288,16 @@ func (r *parkingRepo) UnbindParkingFromUser(ctx context.Context, userID, parking
 	// 解除绑定
 	parkingSpot.OwnerID = 0
 	return r.db.WithContext(ctx).Save(parkingSpot).Error
+}
+
+func (r *parkingRepo) GetParkingSpotByID(ctx context.Context, parkingID uint) (*models.ParkingSpot, error) {
+	var parkingSpot models.ParkingSpot
+	err := r.db.WithContext(ctx).Table("parking_spots").Where("id = ?", parkingID).First(&parkingSpot).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, models.ErrParkingNotFound
+		}
+		return nil, err
+	}
+	return &parkingSpot, nil
 }

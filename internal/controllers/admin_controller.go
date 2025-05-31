@@ -211,18 +211,24 @@ func (c *AdminController) GetUserInfo(ctx *gin.Context) {
 func (c *AdminController) BindParkingToUser(ctx *gin.Context) {
 	var req models.BindParkingRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(400, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	// 从 Gin 上下文获取 context.Context 对象
 	err := c.parkingService.BindParkingToUser(ctx.Request.Context(), req.UserID, req.ParkingID)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": err.Error()})
+		switch {
+		case errors.Is(err, models.ErrUserNotFound), errors.Is(err, models.ErrParkingNotFound):
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+		case errors.Is(err, models.ErrParkingAlreadyBound):
+			ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
+		default:
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		}
 		return
 	}
 
-	ctx.JSON(200, gin.H{"message": "车位绑定成功"})
+	ctx.JSON(http.StatusOK, models.BindParkingResponse{Message: "车位绑定成功"})
 }
 
 // UnbindParkingFromUser 管理员解除车位与用户的绑定

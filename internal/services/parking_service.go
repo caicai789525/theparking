@@ -229,32 +229,35 @@ func (s *ParkingService) BindParkingToUser(ctx context.Context, userID, parkingI
 	// 检查用户是否存在
 	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
-		return err
+		if errors.Is(err, models.ErrUserNotFound) {
+			return models.ErrUserNotFound
+		}
+		return fmt.Errorf("查询用户信息失败: %w", err)
 	}
 	if user == nil {
 		return models.ErrUserNotFound
 	}
 
 	// 检查车位是否存在
-	parking, err := s.parkingRepo.GetParkingByID(ctx, parkingID)
+	parking, err := s.parkingRepo.GetParkingSpotByID(ctx, parkingID)
 	if err != nil {
-		return err
+		if errors.Is(err, models.ErrParkingNotFound) {
+			return models.ErrParkingNotFound
+		}
+		return fmt.Errorf("查询车位信息失败: %w", err)
 	}
 	if parking == nil {
 		return models.ErrParkingNotFound
 	}
 
 	// 检查车位是否已被绑定
-	// 先判断 parking.UserID 是否为 nil，不为 nil 时再解引用比较
-	if parking.UserID != nil && *parking.UserID != 0 {
+	if parking.OwnerID != 0 {
 		return models.ErrParkingAlreadyBound
 	}
 
 	// 绑定车位给用户
-	// 将 uint 类型的 userID 转换为 *uint 类型
-	userIDPtr := &userID
-	parking.UserID = userIDPtr
-	return s.parkingRepo.UpdateParking(ctx, parking)
+	parking.OwnerID = userID
+	return s.parkingRepo.UpdateParkingSpot(ctx, parking)
 }
 
 // GetUserInfo 根据用户 ID 查询用户信息
