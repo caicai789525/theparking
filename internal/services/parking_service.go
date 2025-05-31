@@ -306,17 +306,18 @@ func (s *ParkingService) UnbindParkingFromUser(ctx context.Context, userID, park
 // GetParkingBindUser 查询车位绑定的用户信息
 func (s *ParkingService) GetParkingBindUser(ctx context.Context, parkingID uint) (*models.ParkingBindUserResponse, error) {
 	// 检查车位是否存在
-	parking, err := s.parkingRepo.GetParkingByID(ctx, parkingID)
+	spot, err := s.parkingRepo.GetParkingSpotByID(ctx, parkingID)
 	if err != nil {
 		return nil, err
 	}
-	if parking == nil {
+	if spot == nil {
 		return nil, models.ErrParkingNotFound
 	}
 
 	var username string
-	if parking.UserID != nil {
-		user, err := s.userRepo.GetUserByID(ctx, *parking.UserID)
+	// 不再使用指针操作
+	if spot.OwnerID != 0 {
+		user, err := s.userRepo.GetUserByID(ctx, spot.OwnerID)
 		if err != nil {
 			return nil, err
 		}
@@ -327,7 +328,7 @@ func (s *ParkingService) GetParkingBindUser(ctx context.Context, parkingID uint)
 
 	return &models.ParkingBindUserResponse{
 		ParkingID: parkingID,
-		UserID:    parking.UserID,
+		UserID:    spot.OwnerID, // 直接赋值 uint 类型
 		Username:  username,
 	}, nil
 }

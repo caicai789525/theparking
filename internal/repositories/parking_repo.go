@@ -30,6 +30,7 @@ type ParkingRepository interface {
 	UpdateRecord(ctx context.Context, record *models.ParkingRecord) (*models.ParkingRecord, error)
 	GetParkingByID(ctx context.Context, parkingID uint) (*models.ParkingRecord, error)
 	UpdateParking(ctx context.Context, parking *models.ParkingRecord) error
+	GetParkingSpotByID(ctx context.Context, parkingID uint) (*models.ParkingSpot, error)
 }
 
 type parkingRepo struct {
@@ -171,6 +172,19 @@ func (r *parkingRepo) ListSpots(ctx context.Context, filter SpotFilter) ([]*mode
 
 func (r *parkingRepo) CreateRecord(ctx context.Context, record *models.ParkingRecord) error {
 	return r.db.WithContext(ctx).Create(record).Error
+}
+
+// GetParkingSpotByID 根据车位 ID 获取车位信息
+func (r *parkingRepo) GetParkingSpotByID(ctx context.Context, parkingID uint) (*models.ParkingSpot, error) {
+	var parkingSpot models.ParkingSpot
+	err := r.db.WithContext(ctx).First(&parkingSpot, parkingID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, models.ErrParkingNotFound
+		}
+		return nil, err
+	}
+	return &parkingSpot, nil
 }
 
 func (r *parkingRepo) GetOngoingRecord(ctx context.Context, license string) (*models.ParkingRecord, error) {

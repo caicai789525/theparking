@@ -89,7 +89,7 @@ type UnbindParkingRequest struct {
 
 type ParkingBindUserResponse struct {
 	ParkingID uint   `json:"parking_id"`
-	UserID    *uint  `json:"user_id"`
+	UserID    uint   `json:"user_id"`
 	Username  string `json:"username,omitempty"`
 }
 
