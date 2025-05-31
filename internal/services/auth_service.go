@@ -41,46 +41,29 @@ var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]
 
 // 用户注册
 func (s *AuthService) Register(ctx context.Context, username, password, email string) error {
-	// 输入验证
-	if username == "" {
-		return errors.New("用户名不能为空")
-	}
-	if password == "" {
-		return errors.New("密码不能为空")
-	}
-	if !emailRegex.MatchString(email) {
-		return errors.New("邮箱格式不正确")
-	}
-
-	// 检查用户名是否已存在
-	user, err := s.userRepo.GetUserByUsername(ctx, username)
+	// 检查用户是否已存在
+	exists, err := s.userRepo.CheckUserExists(ctx, username, email)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Printf("查询用户名失败: %v", err)
-			return fmt.Errorf("查询用户名失败: %w", err)
-		}
-		// 用户不存在，继续注册流程
-	} else if user != nil {
-		return errors.New("用户名已存在")
+		return err
+	}
+	if exists {
+		return errors.New("用户名或邮箱已存在")
 	}
 
-	user = &models.User{
+	// 创建用户对象
+	user := &models.User{
 		Username: username,
 		Password: password,
 		Email:    email,
 	}
 
+	// 对密码进行哈希处理
 	if err := user.HashPassword(); err != nil {
-		log.Printf("密码哈希处理失败: %v", err)
 		return err
 	}
 
-	if err := s.userRepo.CreateUser(ctx, user); err != nil {
-		log.Printf("创建用户记录失败: %v", err)
-		return fmt.Errorf("创建用户记录失败: %w", err)
-	}
-
-	return nil
+	// 将用户信息保存到数据库
+	return s.userRepo.CreateUser(ctx, user)
 }
 
 // GenerateToken 生成 JWT 令牌
