@@ -224,3 +224,33 @@ func (c *AdminController) BindParkingToUser(ctx *gin.Context) {
 
 	ctx.JSON(200, gin.H{"message": "车位绑定成功"})
 }
+
+// UnbindParkingFromUser 管理员解除车位与用户的绑定
+// @Summary 管理员解除车位与用户的绑定
+// @Description 管理员根据用户 ID 和车位 ID 解除车位与指定用户的绑定
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param input body models.UnbindParkingRequest true "解除绑定车位请求体"
+// @Security BearerAuth
+// @Success 200 {object} models.BindParkingResponse "解除绑定成功"
+// @Failure 400 {object} ErrorResponse "请求参数错误"
+// @Failure 401 {object} ErrorResponse "未授权访问"
+// @Failure 404 {object} ErrorResponse "用户或车位不存在"
+// @Failure 500 {object} ErrorResponse "服务器内部错误"
+// @Router /admin/unbind-parking [post]
+func (c *AdminController) UnbindParkingFromUser(ctx *gin.Context) {
+	var req models.UnbindParkingRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	err := c.parkingService.UnbindParkingFromUser(ctx.Request.Context(), req.UserID, req.ParkingID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.BindParkingResponse{Message: "车位解除绑定成功"})
+}

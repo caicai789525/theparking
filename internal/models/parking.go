@@ -82,6 +82,11 @@ type ParkingRecord struct {
 	VehicleID *uint // 添加关联车辆ID
 }
 
+type UnbindParkingRequest struct {
+	UserID    uint `json:"user_id" binding:"required"`
+	ParkingID uint `json:"parking_id" binding:"required"`
+}
+
 // BindParkingResponse 绑定车位响应结构体
 type BindParkingResponse struct {
 	Message string `json:"message"`

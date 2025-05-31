@@ -272,3 +272,33 @@ func (s *ParkingService) GetUserInfo(ctx context.Context, userID uint) (*models.
 		Username: user.Username, // 假设 User 结构体有 Username 字段
 	}, nil
 }
+
+// UnbindParkingFromUser 管理员解除车位与用户的绑定
+func (s *ParkingService) UnbindParkingFromUser(ctx context.Context, userID, parkingID uint) error {
+	// 检查用户是否存在
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return models.ErrUserNotFound
+	}
+
+	// 检查车位是否存在
+	parking, err := s.parkingRepo.GetParkingByID(ctx, parkingID)
+	if err != nil {
+		return err
+	}
+	if parking == nil {
+		return models.ErrParkingNotFound
+	}
+
+	// 检查车位是否已绑定给该用户
+	if parking.UserID == nil || *parking.UserID != userID {
+		return errors.New("车位未绑定给该用户")
+	}
+
+	// 解除车位与用户的绑定
+	parking.UserID = nil
+	return s.parkingRepo.UpdateParking(ctx, parking)
+}
