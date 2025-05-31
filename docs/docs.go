@@ -868,6 +868,44 @@ const docTemplate = `{
             }
         },
         "/vehicles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询当前用户名下的所有车辆信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vehicle"
+                ],
+                "summary": "查询自己的车辆",
+                "responses": {
+                    "200": {
+                        "description": "返回用户的车辆列表",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/controllers.VehicleResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -911,6 +949,67 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/vehicles/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户删除自己绑定的车辆",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vehicle"
+                ],
+                "summary": "删除车辆",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "车辆ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "车辆不存在或无权操作",
                         "schema": {
                             "$ref": "#/definitions/controllers.ErrorResponse"
                         }

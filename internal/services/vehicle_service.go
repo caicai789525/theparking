@@ -56,6 +56,10 @@ func (s *VehicleService) PublishSpotForRent(ctx context.Context, userID, spotID 
 	return s.leaseService.CreateLease(ctx, userID, spotID, period, rate)
 }
 
+func (s *VehicleService) RemoveVehicle(ctx context.Context, userID, vehicleID uint) error {
+	return s.repo.RemoveVehicle(ctx, userID, vehicleID)
+}
+
 func (s *VehicleService) BindVehicle(ctx context.Context, userID uint, license, brand, model string) (*models.Vehicle, error) {
 	vehicle := &models.Vehicle{
 		UserID:       userID,
@@ -68,4 +72,9 @@ func (s *VehicleService) BindVehicle(ctx context.Context, userID uint, license, 
 		return nil, fmt.Errorf("绑定车辆失败: %w", err)
 	}
 	return vehicle, nil
+}
+
+// GetUserVehicles 查询用户的所有车辆
+func (s *VehicleService) GetUserVehicles(ctx context.Context, userID uint) ([]*models.Vehicle, error) {
+	return s.repo.GetUserVehicles(ctx, userID)
 }

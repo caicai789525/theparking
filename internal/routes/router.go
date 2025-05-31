@@ -29,6 +29,11 @@ func setupSwaggerRoutes(router *gin.Engine) {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
+// applyAuthMiddleware 应用 JWT 身份验证中间件
+func applyAuthMiddleware(group *gin.RouterGroup, deps *RouterDependencies) {
+	group.Use(middleware.JWTAuthMiddleware(deps.Cfg, deps.AuthService))
+}
+
 // setupPublicRoutes 配置公共路由组，包含注册、用户登录等接口
 func setupPublicRoutes(router *gin.Engine, deps *RouterDependencies) {
 	public := router.Group("/")
@@ -43,46 +48,68 @@ func setupPublicRoutes(router *gin.Engine, deps *RouterDependencies) {
 	}
 }
 
+// setupVehicleRoutes 配置车辆相关路由组
+func setupVehicleRoutes(authGroup *gin.RouterGroup, deps *RouterDependencies) {
+	vehicles := authGroup.Group("/vehicles")
+	{
+		// 绑定车辆信息接口
+		vehicles.POST("", deps.VehicleService.BindVehicle)
+		// 查询自己的车辆接口
+		vehicles.GET("", deps.VehicleService.GetUserVehicles)
+		// 删除车辆接口
+		vehicles.DELETE("/:id", deps.VehicleService.RemoveVehicle)
+	}
+}
+
+// setupParkingRoutes 配置停车场相关路由组
+func setupParkingRoutes(authGroup *gin.RouterGroup, deps *RouterDependencies) {
+	parking := authGroup.Group("/parking")
+	{
+		// 列出所有停车位信息接口
+		parking.GET("/spots", deps.ParkingService.ListSpots)
+		// 获取用户停车位信息接口
+		parking.GET("/my-spots", deps.ParkingService.GetUserSpots)
+		// 车辆进入停车场接口
+		parking.POST("/entry", deps.ParkingService.Entry)
+		// 车辆离开停车场接口
+		parking.POST("/exit/:id", deps.ParkingService.Exit)
+		// 发布车辆出租信息接口
+		parking.POST("/rent", deps.VehicleService.PublishForRent)
+	}
+}
+
+// setupLeaseRoutes 配置租赁相关路由组
+func setupLeaseRoutes(authGroup *gin.RouterGroup, deps *RouterDependencies) {
+	// 创建租赁记录接口
+	authGroup.POST("/lease", deps.LeaseService.CreateLease)
+}
+
+// setupOwnerRoutes 配置业主相关路由组
+func setupOwnerRoutes(authGroup *gin.RouterGroup, deps *RouterDependencies) {
+	owner := authGroup.Group("/owner").Use(middleware.RoleCheck(models.Owner))
+	{
+		// 业主购买停车位接口
+		owner.POST("/purchase", deps.OwnerService.PurchaseSpot)
+		// 业主创建停车位接口
+		owner.POST("/spots", deps.ParkingService.CreateSpot)
+	}
+}
+
 // setupAuthRoutes 配置需要身份验证的路由组
 func setupAuthRoutes(router *gin.Engine, deps *RouterDependencies) {
 	authGroup := router.Group("/")
-	// 应用 JWT 身份验证中间件
-	authGroup.Use(middleware.JWTAuthMiddleware(deps.Cfg, deps.AuthService))
-	{
-		// 绑定车辆信息接口
-		authGroup.POST("/vehicles", deps.VehicleService.BindVehicle)
-		// 获取用户停车位信息接口
-		authGroup.GET("/parking/my-spots", deps.ParkingService.GetUserSpots)
-		// 创建租赁记录接口
-		authGroup.POST("/lease", deps.LeaseService.CreateLease)
+	applyAuthMiddleware(authGroup, deps)
 
-		parking := authGroup.Group("/parking")
-		{
-			// 列出所有停车位信息接口
-			parking.GET("/spots", deps.ParkingService.ListSpots)
-			// 车辆进入停车场接口
-			parking.POST("/entry", deps.ParkingService.Entry)
-			// 车辆离开停车场接口
-			parking.POST("/exit/:id", deps.ParkingService.Exit)
-			// 发布车辆出租信息接口
-			parking.POST("/rent", deps.VehicleService.PublishForRent)
-		}
-
-		owner := authGroup.Group("/owner").Use(middleware.RoleCheck(models.Owner))
-		{
-			// 业主购买停车位接口
-			owner.POST("/purchase", deps.OwnerService.PurchaseSpot)
-			// 业主创建停车位接口
-			owner.POST("/spots", deps.ParkingService.CreateSpot)
-		}
-	}
+	setupVehicleRoutes(authGroup, deps)
+	setupParkingRoutes(authGroup, deps)
+	setupLeaseRoutes(authGroup, deps)
+	setupOwnerRoutes(authGroup, deps)
 }
 
 // setupReportRoutes 配置报表相关路由组
 func setupReportRoutes(router *gin.Engine, deps *RouterDependencies) {
 	report := router.Group("/reports")
-	// 应用 JWT 身份验证中间件
-	report.Use(middleware.JWTAuthMiddleware(deps.Cfg, deps.AuthService))
+	applyAuthMiddleware(report, deps)
 	{
 		// 获取每日报表信息接口
 		report.GET("/daily", deps.ReportService.GetDailyReport)
@@ -92,8 +119,7 @@ func setupReportRoutes(router *gin.Engine, deps *RouterDependencies) {
 // setupAdminRoutes 配置管理员相关路由组
 func setupAdminRoutes(router *gin.Engine, deps *RouterDependencies) {
 	adminGroup := router.Group("/admin")
-	// 应用 JWT 身份验证和管理员角色检查中间件
-	adminGroup.Use(middleware.JWTAuthMiddleware(deps.Cfg, deps.AuthService))
+	applyAuthMiddleware(adminGroup, deps)
 	adminGroup.Use(middleware.RoleCheck(models.Admin))
 	{
 		// 更新车位状态接口
@@ -109,5 +135,5 @@ func SetupRouter(router *gin.Engine, deps *RouterDependencies) {
 	setupPublicRoutes(router, deps)
 	setupAuthRoutes(router, deps)
 	setupReportRoutes(router, deps)
-	setupAdminRoutes(router, deps) // 新增管理员路由
+	setupAdminRoutes(router, deps)
 }
