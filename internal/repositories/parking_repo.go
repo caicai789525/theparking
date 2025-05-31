@@ -253,7 +253,8 @@ func (r *parkingRepo) GetParkingByID(ctx context.Context, parkingID uint) (*mode
 	err := r.db.WithContext(ctx).First(&parking, parkingID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+			// 记录不存在，返回自定义错误
+			return nil, models.ErrParkingNotFound
 		}
 		return nil, err
 	}

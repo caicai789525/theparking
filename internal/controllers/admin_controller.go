@@ -278,7 +278,11 @@ func (c *AdminController) GetParkingBindUser(ctx *gin.Context) {
 
 	response, err := c.parkingService.GetParkingBindUser(ctx.Request.Context(), uint(parkingID))
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		if err == models.ErrParkingNotFound {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "车位不存在"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		}
 		return
 	}
 
