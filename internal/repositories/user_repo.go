@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -41,7 +42,8 @@ func NewUserRepo(db *gorm.DB) UserRepository {
 
 func (r *userRepo) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
-	// 打印查询条件，方便调试
+	// 去除前后空格
+	username = strings.TrimSpace(username)
 	println("查询用户名:", username)
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
 	if err != nil {
